@@ -8,6 +8,7 @@ struct App {
     bool running = true;
     bool mp_running = false;
     bool mp_finished = false;
+    bool stop_requested = false;
     bool scroll_shell = false;
     bool focus_stdin = false;
 

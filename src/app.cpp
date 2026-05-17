@@ -62,7 +62,10 @@ void app_frame(App &app) {
             append_output(app);
             app.scroll_shell = true;
             app.mp_running = false;
-            app.mp_finished = true;
+            if (!app.stop_requested) {
+                app.mp_finished = true;
+            }
+            app.stop_requested = false;
         }
     }
 
@@ -81,6 +84,7 @@ void app_frame(App &app) {
         app.shell_text.clear();
         app.stdin_text.clear();
         app.mp_finished = false;
+        app.stop_requested = false;
         mpy::run_async(app.editor_text);
         app.mp_running = true;
         app.focus_stdin = true;
@@ -88,6 +92,7 @@ void app_frame(App &app) {
     }
 
     if (actions.stop && app.mp_running) {
+        app.stop_requested = true;
         mpy::stop();
         app.status_text = "Stopping";
     }
