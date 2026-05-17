@@ -67,9 +67,12 @@ jobs:
             ncurses-static
       - run: git config --global safe.directory '*'
       - run: |
+          # Remove dynamic libs so cmake finds only static .a files
+          rm -f /usr/lib/libncurses.so /usr/lib/libncursesw.so \
+                /usr/lib/libtinfo.so /usr/lib/libtinfow.so
           git submodule update --init
           git submodule update --init --recursive third_party/imtui
-      - run: cmake -B build -DCMAKE_EXE_LINKER_FLAGS="-static" -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" -DCURSES_NEED_NCURSES=TRUE
+      - run: cmake -B build -DCMAKE_EXE_LINKER_FLAGS="-static"
       - run: make -C build -j$(nproc)
       - run: cp build/midle midle-linux-x64
       - uses: actions/upload-artifact@v4
