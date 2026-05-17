@@ -55,8 +55,8 @@ void RenderConsolePopup(App &app, TuiActions &actions, int screen_w, int screen_
     const Theme &theme = GetTheme();
     const int popup_w = std::max(24, screen_w * 1 / 2);
     const int popup_h = std::max(10, screen_h * 2 / 5);
-    const int popup_x = screen_w - popup_w;
-    const int popup_y = screen_h - popup_h - 1;  // above status bar
+    const int popup_x = (screen_w - popup_w) / 2;
+    const int popup_y = (screen_h - popup_h) / 2;
 
     ImGui::SetNextWindowPos(ImVec2(static_cast<float>(popup_x), static_cast<float>(popup_y)), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(static_cast<float>(popup_w), static_cast<float>(popup_h)), ImGuiCond_FirstUseEver);
