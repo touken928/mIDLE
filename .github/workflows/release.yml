@@ -1,0 +1,90 @@
+name: Build Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          git submodule update --init
+          git submodule update --init --recursive third_party/imtui
+      - run: cmake -B build
+      - run: make -C build -j$(sysctl -n hw.ncpu)
+      - run: chmod +x build/midle
+      - uses: actions/upload-artifact@v4
+        with:
+          name: midle-macos-arm64
+          path: build/midle
+
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            git
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-make
+            mingw-w64-x86_64-python
+      - run: |
+          git submodule update --init
+          git submodule update --init --recursive third_party/imtui third_party/pdcurses
+      - run: cmake -B build -G "MSYS Makefiles"
+      - run: make -C build -j$(nproc)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: midle-windows-x64
+          path: build/midle.exe
+
+  linux-musl:
+    runs-on: ubuntu-latest
+    container:
+      image: alpine:3.20
+      options: --user root
+    steps:
+      - run: apk add --no-cache git
+      - uses: actions/checkout@v4
+      - run: |
+          apk add --no-cache \
+            cmake \
+            make \
+            g++ \
+            python3 \
+            ncurses-dev
+      - run: |
+          git submodule update --init
+          git submodule update --init --recursive third_party/imtui
+      - run: cmake -B build
+      - run: make -C build -j$(nproc)
+      - run: chmod +x build/midle
+      - uses: actions/upload-artifact@v4
+        with:
+          name: midle-linux-musl-x64
+          path: build/midle
+
+  release:
+    needs: [macos, windows, linux-musl]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            midle-macos-arm64/midle
+            midle-windows-x64/midle.exe
+            midle-linux-musl-x64/midle
