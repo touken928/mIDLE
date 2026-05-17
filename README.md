@@ -1,6 +1,6 @@
 # mIDLE
 
-TUI-based Python IDE — ImTUI terminal UI + MicroPython embedded runtime, inspired by IDLE.
+A terminal Python IDE with embedded MicroPython runtime and ImTUI interface.
 
 ## Build
 
@@ -21,13 +21,13 @@ mIDLE/
 ├── src/
 │   ├── main.cpp              # bootstrap
 │   ├── app.h / app.cpp       # lifecycle + responsive layout
-│   ├── mpy/                  # ── self-contained target ──
+│   ├── mpy/                  # MicroPython embed target
 │   │   ├── CMakeLists.txt
 │   │   ├── mpconfigport.h    #   MicroPython port config
 │   │   ├── mpyhalport.h / .c #   HAL: stdout capture, stdin ring-buffer
 │   │   └── mpy.h / .cpp      #   C++ wrapper (midle::mpy)
 │   └── ui/
-│       ├── tui.h / .cpp        #   toolbar + theme + workspace layout
+│       ├── tui.h / .cpp        #   layout, theme, status bar
 │       ├── layout.h            #   dark theme + layout constants
 │       ├── editor_panel.h / .cpp
 │       └── shell_panel.h / .cpp
@@ -65,8 +65,6 @@ midle::mpy::deinit();                 // shutdown
   When `input()` is called, the thread blocks until `mpy::input()` feeds a line.
   The shell panel shows a stdin input field while executing.
 
-- **Stop running code:** Press the Stop button or `Ctrl+R` while code is running
+- **Stop running code:** Press `Ctrl+R` while code is running
   to inject a KeyboardInterrupt.
 
-- **Small terminals:** layout automatically switches from side-by-side to
-  stacked when the terminal is narrower than 70 columns.
