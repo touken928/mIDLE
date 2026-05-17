@@ -14,6 +14,9 @@ namespace midle {
 namespace mpy {
 
 static char *gc_heap = nullptr;
+static std::atomic_bool s_running{false};
+static std::atomic_bool s_done{true};
+static std::thread      s_thread;
 
 // ── lifecycle ────────────────────────────────────────────────
 void init(void *stack_top, size_t heap_size) {
@@ -22,6 +25,13 @@ void init(void *stack_top, size_t heap_size) {
 }
 
 void deinit() {
+    mpy_stdin_close();
+    if (s_thread.joinable()) {
+        s_thread.join();
+    }
+    s_running.store(false, std::memory_order_release);
+    s_done.store(true, std::memory_order_release);
+
     if (gc_heap) {
         mp_embed_deinit();
         delete[] gc_heap;
@@ -49,10 +59,6 @@ std::string exec(const std::string &source) {
 }
 
 // ── async exec ───────────────────────────────────────────────
-static std::atomic_bool s_running{false};
-static std::atomic_bool s_done{false};
-static std::thread      s_thread;
-
 static void runner(const std::string &source) {
     mp_embed_exec_str(source.c_str());
     mpy_stdin_close();
@@ -60,12 +66,16 @@ static void runner(const std::string &source) {
 }
 
 void run_async(const std::string &source) {
-    if (s_running.exchange(true))
+    if (s_running.exchange(true)) {
         return;
-    s_done.store(false);
+    }
+    if (s_thread.joinable()) {
+        s_thread.join();
+    }
+    mpy_stdin_reset();
+    s_done.store(false, std::memory_order_release);
     mp_hal_clear_output();
     s_thread = std::thread(runner, source);
-    s_thread.detach();
 }
 
 std::string take_output() {
@@ -77,7 +87,12 @@ std::string take_output() {
 
 bool done() {
     bool d = s_done.load(std::memory_order_acquire);
-    if (d) s_running.store(false);
+    if (d) {
+        if (s_thread.joinable()) {
+            s_thread.join();
+        }
+        s_running.store(false, std::memory_order_release);
+    }
     return d;
 }
 

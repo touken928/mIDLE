@@ -1,13 +1,11 @@
 #pragma once
-#include "imgui.h"
-#include "../app.h"
+
+#include "tui.h"
 
 namespace midle {
 namespace ui {
 
-// mp_running / feed_stdin are in/out params for async execution
-void ShellPanel(App &app, const ImVec2 &child_size,
-                bool mp_running, bool &feed_stdin);
+void RenderShellPanel(App &app, TuiActions &actions, int width, int height);
 
 } // namespace ui
 } // namespace midle

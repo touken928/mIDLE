@@ -1,46 +1,54 @@
 #include "shell_panel.h"
-#include "imgui/misc/cpp/imgui_stdlib.h"
+
+#include "imgui.h"
+#include "misc/cpp/imgui_stdlib.h"
+#include "layout.h"
+
+#include <algorithm>
 
 namespace midle {
 namespace ui {
 
-void ShellPanel(App &app, const ImVec2 &child_size,
-                bool mp_running, bool &feed_stdin)
-{
-    ImVec2 sz = child_size;
-    if (sz.x <= 0) sz.x = 30;
-    if (sz.y <= 0) sz.y = 6;
+void RenderShellPanel(App &app, TuiActions &actions, int width, int height) {
+    const Theme &theme = GetTheme();
+    const int safe_w = std::max(width, 8);
+    const int safe_h = std::max(height, 6);
 
-    const float stdin_h = ImGui::GetFrameHeightWithSpacing();
-
-    // ── Output area ──────────────────────────────────────
-    float out_h = sz.y - stdin_h;
-    if (out_h < 2.f) out_h = 2.f;
-
-    ImGui::BeginChild("shell_out", ImVec2(sz.x, out_h), true,
+    ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 0.f);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.f);
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, theme.panel);
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, theme.panel);
+    ImGui::PushStyleColor(ImGuiCol_Text, theme.text);
+    ImGui::BeginChild("console_io", ImVec2(static_cast<float>(safe_w), static_cast<float>(safe_h)), false,
         ImGuiWindowFlags_HorizontalScrollbar);
 
     ImGui::TextUnformatted(app.shell_text.c_str());
+    ImGui::PushStyleColor(ImGuiCol_Text, app.mp_running ? theme.title : theme.muted);
+    ImGui::TextUnformatted(app.mp_running ? "> " : "$ ");
+    ImGui::PopStyleColor();
+    ImGui::SameLine();
+
+    ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue;
+    if (!app.mp_running) {
+        flags |= ImGuiInputTextFlags_ReadOnly;
+    }
+    if (app.focus_stdin) {
+        ImGui::SetKeyboardFocusHere();
+        app.focus_stdin = false;
+    }
+    ImGui::SetNextItemWidth(-1.f);
+    if (ImGui::InputText("##stdin_inline", &app.stdin_text, flags)) {
+        actions.feed_stdin = true;
+    }
 
     if (app.scroll_shell) {
         ImGui::SetScrollHereY(1.0f);
         app.scroll_shell = false;
     }
+
     ImGui::EndChild();
-
-    // ── Stdin input line ─────────────────────────────────
-    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.09f, 0.09f, 0.12f, 1.f));
-    ImGui::PushStyleColor(ImGuiCol_Text,    ImVec4(0.80f, 0.84f, 0.96f, 1.f));
-    ImGui::SetNextItemWidth(sz.x - 8.f);
-    if (ImGui::InputText("##stdin", &app.stdin_text,
-            ImGuiInputTextFlags_EnterReturnsTrue)) {
-        feed_stdin = true;
-    }
-    ImGui::PopStyleColor(2);
-
-    // Focus the stdin field when MicroPython is running (needs input)
-    if (mp_running)
-        ImGui::SetKeyboardFocusHere(-1);
+    ImGui::PopStyleColor(3);
+    ImGui::PopStyleVar(2);
 }
 
 } // namespace ui

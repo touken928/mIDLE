@@ -23,5 +23,8 @@ void input(const std::string &text);
 // Signal EOF on stdin so Python's input() / sys.stdin.read() return.
 void close_stdin();
 
+// Execute synchronously and return captured stdout/stderr text.
+std::string exec(const std::string &source);
+
 } // namespace mpy
 } // namespace midle

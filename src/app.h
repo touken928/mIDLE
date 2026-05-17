@@ -1,15 +1,19 @@
 #pragma once
+
 #include <string>
 
 namespace midle {
 
 struct App {
-    bool        running     = true;
+    bool running = true;
+    bool mp_running = false;
+    bool scroll_shell = false;
+    bool focus_stdin = false;
+
     std::string editor_text;
     std::string shell_text;
-    std::string stdin_text;         // stdin input field
-    bool        scroll_shell = false;
-    bool        mp_running   = false; // MicroPython is executing in background
+    std::string stdin_text;
+    std::string status_text;
 };
 
 void app_init(App &app);

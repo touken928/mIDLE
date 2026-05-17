@@ -5,25 +5,57 @@
 set(MP_TOP       "${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/micropython")
 set(MP_EMBED_DIR "${CMAKE_CURRENT_BINARY_DIR}/micropython_embed")
 
+find_program(MPY_MAKE_PROGRAM NAMES gmake make mingw32-make REQUIRED)
+find_program(MPY_PYTHON_PROGRAM NAMES python3 python py REQUIRED)
+
+file(RELATIVE_PATH MP_TOP_MAKE "${CMAKE_CURRENT_SOURCE_DIR}" "${MP_TOP}")
+file(RELATIVE_PATH MP_EMBED_DIR_MAKE "${CMAKE_CURRENT_SOURCE_DIR}" "${MP_EMBED_DIR}")
+file(RELATIVE_PATH MP_EMBED_BUILD_MAKE
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_BINARY_DIR}/build-embed"
+)
+file(TO_CMAKE_PATH "${CMAKE_C_COMPILER}" MPY_CC)
+file(TO_CMAKE_PATH "${MP_TOP}" MP_TOP_CMAKE)
+file(TO_CMAKE_PATH "${MP_EMBED_DIR}" MP_EMBED_DIR_CMAKE)
+file(TO_CMAKE_PATH "${CMAKE_CURRENT_SOURCE_DIR}" MPY_PORT_DIR_CMAKE)
+
 # ── 1.  Generate embed package (once) ───────────────────────
 if(NOT EXISTS "${MP_EMBED_DIR}/py/compile.c")
     message(STATUS "[mpy] generating embed package …")
     file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/gen_embed.mk"
-        "MICROPYTHON_TOP = ${MP_TOP}\n"
-        "PACKAGE_DIR    = ${MP_EMBED_DIR}\n"
-        "include ${MP_TOP}/ports/embed/embed.mk\n"
+        "MICROPYTHON_TOP = ${MP_TOP_MAKE}\n"
+        "PACKAGE_DIR    = ${MP_EMBED_DIR_MAKE}\n"
+        "include ${MP_TOP_MAKE}/ports/embed/embed.mk\n"
     )
     # Run from src/mpy/ so mpconfigport.h is found as a direct dependency.
     # BUILD is passed on the command line (highest precedence in GNU make)
     # to prevent embed.mk's default BUILD=build-embed leaking into the source tree.
     execute_process(
-        COMMAND ${CMAKE_MAKE_PROGRAM} -f "${CMAKE_CURRENT_BINARY_DIR}/gen_embed.mk"
-            BUILD="${CMAKE_CURRENT_BINARY_DIR}/build-embed"
+        COMMAND "${MPY_MAKE_PROGRAM}" -f "${CMAKE_CURRENT_BINARY_DIR}/gen_embed.mk"
+            BUILD="${MP_EMBED_BUILD_MAKE}"
+            PYTHON="${MPY_PYTHON_PROGRAM}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         RESULT_VARIABLE _res
     )
     if(NOT _res EQUAL 0)
         message(FATAL_ERROR "[mpy] embed package generation failed")
+    endif()
+endif()
+
+if(WIN32)
+    message(STATUS "[mpy] regenerating headers for Windows")
+    execute_process(
+        COMMAND "${MPY_PYTHON_PROGRAM}" "${CMAKE_CURRENT_SOURCE_DIR}/regen_mpy_headers.py"
+            --cc "${MPY_CC}"
+            --python "${MPY_PYTHON_PROGRAM}"
+            --mp-top "${MP_TOP_CMAKE}"
+            --embed-dir "${MP_EMBED_DIR_CMAKE}"
+            --port-dir "${MPY_PORT_DIR_CMAKE}"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        RESULT_VARIABLE _regen_res
+    )
+    if(NOT _regen_res EQUAL 0)
+        message(FATAL_ERROR "[mpy] Windows header regeneration failed")
     endif()
 endif()
 
@@ -42,6 +74,7 @@ add_library(mpy STATIC
 )
 
 target_include_directories(mpy PUBLIC
+    "${MP_TOP}"                             # shared/readline/readline.h
     "${MP_EMBED_DIR}"                       # py, extmod, shared
     "${MP_EMBED_DIR}/port"                  # micropython_embed.h
     "${MP_EMBED_DIR}/genhdr"                # qstrdefs.generated.h

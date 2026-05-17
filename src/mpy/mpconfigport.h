@@ -11,5 +11,8 @@
 #define MICROPY_PY_SYS                    (1)
 #define MICROPY_PY_MATH                   (1)
 #define MICROPY_PY_BUILTINS               (1)
+#define MICROPY_PY_BUILTINS_INPUT         (1)
+
+#define mp_hal_readline                   mpy_hal_readline
 
 #define MICROPY_PY_SYS_PLATFORM           "mIDLE"

@@ -1,7 +1,9 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
+#include "py/misc.h"
 #include "py/mphal.h"
+#include "shared/readline/readline.h"
 
 #ifndef __EMSCRIPTEN__
 #  include <pthread.h>
@@ -44,7 +46,14 @@ void mp_hal_clear_output(void) {
 // Thread-safe: returns a copy of the current output
 char *mp_hal_take_output(void) {
     LOCK();
-    char *out = strdup(output_buf);
+    size_t len = output_len;
+    char *out = (char *)malloc(len + 1);
+    if (out) {
+        memcpy(out, output_buf, len);
+        out[len] = '\0';
+    }
+    output_len = 0;
+    output_buf[0] = '\0';
     UNLOCK();
     return out;
 }
@@ -56,6 +65,15 @@ static size_t      stdin_rd;
 static size_t      stdin_wr;
 static int         stdin_closed;
 static pthread_cond_t stdin_cv = PTHREAD_COND_INITIALIZER;
+
+void mpy_stdin_reset(void) {
+    LOCK();
+    stdin_rd = 0;
+    stdin_wr = 0;
+    stdin_closed = 0;
+    pthread_cond_signal(&stdin_cv);
+    UNLOCK();
+}
 
 void mpy_stdin_feed(const char *str, size_t len) {
     LOCK();
@@ -88,4 +106,24 @@ int mp_hal_stdin_rx_chr(void) {
     stdin_rd = (stdin_rd + 1) % STDIN_CAP;
     UNLOCK();
     return (unsigned char)c;
+}
+
+int mpy_hal_readline(vstr_t *line, const char *prompt) {
+    (void)prompt;
+    for (;;) {
+        int c = mp_hal_stdin_rx_chr();
+        if (c < 0) {
+            return CHAR_CTRL_D;
+        }
+        if (c == CHAR_CTRL_C) {
+            return CHAR_CTRL_C;
+        }
+        if (c == '\r') {
+            continue;
+        }
+        if (c == '\n') {
+            return 0;
+        }
+        vstr_add_byte(line, (byte)c);
+    }
 }

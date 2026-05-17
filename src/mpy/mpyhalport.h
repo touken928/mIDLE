@@ -12,7 +12,10 @@ void mp_hal_clear_output(void);
 char *mp_hal_take_output(void);         // returns malloced copy, caller frees
 
 void mpy_stdin_feed(const char *str, size_t len);
+void mpy_stdin_reset(void);
 void mpy_stdin_close(void);
+struct _vstr_t;
+int mpy_hal_readline(struct _vstr_t *line, const char *prompt);
 
 #ifdef __cplusplus
 }
