@@ -61,13 +61,14 @@ void RenderConsolePopup(App &app, TuiActions &actions, int screen_w, int screen_
     ImGui::SetNextWindowPos(ImVec2(static_cast<float>(popup_x), static_cast<float>(popup_y)), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(static_cast<float>(popup_w), static_cast<float>(popup_h)), ImGuiCond_FirstUseEver);
 
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, theme.panel);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, theme.popup);
     bool open = true;
     if (!ImGui::Begin("Console", &open)) {
         ImGui::PopStyleColor();
         ImGui::End();
         return;
     }
+    ImGui::SetWindowFocus();
     ImGui::PopStyleColor();
 
     if (!open) {

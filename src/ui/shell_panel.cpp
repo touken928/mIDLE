@@ -16,8 +16,8 @@ void RenderShellPanel(App &app, TuiActions &actions, int width, int height) {
 
     ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 0.f);
     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.f);
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, theme.panel);
-    ImGui::PushStyleColor(ImGuiCol_FrameBg, theme.panel);
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, theme.popup);
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, theme.popup);
     ImGui::PushStyleColor(ImGuiCol_Text, theme.text);
     ImGui::BeginChild("console_io", ImVec2(static_cast<float>(safe_w), static_cast<float>(safe_h)), false,
         ImGuiWindowFlags_HorizontalScrollbar);
@@ -30,7 +30,7 @@ void RenderShellPanel(App &app, TuiActions &actions, int width, int height) {
         ImGui::PopStyleColor();
     } else {
         ImGui::PushStyleColor(ImGuiCol_Text, app.mp_running ? theme.title : theme.muted);
-        ImGui::TextUnformatted(app.mp_running ? "> " : "$ ");
+        ImGui::TextUnformatted(app.mp_running ? ">" : "$");
         ImGui::PopStyleColor();
         ImGui::SameLine();
 

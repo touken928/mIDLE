@@ -38,6 +38,21 @@ endif()
 # ═════════════════════════════════════════════════════════════
 add_subdirectory(third_party/imtui)
 
+# Apply patch: use terminal default background for ANSI color 16 (pure black)
+set(_imtui_patch_file "${CMAKE_CURRENT_SOURCE_DIR}/third_party/imtui/src/imtui-impl-ncurses.cpp")
+set(_imtui_patch_marker "${CMAKE_CURRENT_BINARY_DIR}/.imtui_ncurses_patched")
+if(NOT EXISTS "${_imtui_patch_marker}")
+    file(READ "${_imtui_patch_file}" _imtui_contents)
+    string(REPLACE "init_pair(nColPairs, f, b);"
+        "short b_init = (b == 16) ? -1 : (short)b;\n                init_pair(nColPairs, f, b_init);"
+        _imtui_patched
+        "${_imtui_contents}"
+    )
+    file(WRITE "${_imtui_patch_file}" "${_imtui_patched}")
+    file(WRITE "${_imtui_patch_marker}" "")
+    message(STATUS "[imtui] patched ncurses renderer for terminal-default black background")
+endif()
+
 # ═════════════════════════════════════════════════════════════
 # 4.  mIDLE executable
 # ═════════════════════════════════════════════════════════════
