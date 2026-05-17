@@ -49,7 +49,7 @@ void RenderEditorWindow(App &app, int x, int y, int width, int height) {
 }
 
 void RenderConsolePopup(App &app, TuiActions &actions, int screen_w, int screen_h) {
-    if (!app.mp_running) {
+    if (!app.mp_running && !app.mp_finished) {
         return;
     }
     const Theme &theme = GetTheme();
@@ -71,7 +71,20 @@ void RenderConsolePopup(App &app, TuiActions &actions, int screen_w, int screen_
     ImGui::PopStyleColor();
 
     if (!open) {
-        actions.stop = true;
+        if (app.mp_running) {
+            actions.stop = true;
+        } else {
+            actions.dismiss_console = true;
+        }
+    }
+
+    if (app.mp_finished) {
+        if (ImGui::GetIO().InputQueueCharacters.Size > 0 ||
+            ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Enter)) ||
+            ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape)) ||
+            ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Space))) {
+            actions.dismiss_console = true;
+        }
     }
 
     const int panel_h = static_cast<int>(ImGui::GetContentRegionAvail().y);

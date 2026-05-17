@@ -62,7 +62,7 @@ void app_frame(App &app) {
             append_output(app);
             app.scroll_shell = true;
             app.mp_running = false;
-            app.status_text = "Finished";
+            app.mp_finished = true;
         }
     }
 
@@ -80,6 +80,7 @@ void app_frame(App &app) {
     if (actions.run && !app.mp_running) {
         app.shell_text.clear();
         app.stdin_text.clear();
+        app.mp_finished = false;
         mpy::run_async(app.editor_text);
         app.mp_running = true;
         app.focus_stdin = true;
@@ -93,6 +94,10 @@ void app_frame(App &app) {
 
     if (actions.quit) {
         app.running = false;
+    }
+
+    if (actions.dismiss_console) {
+        app.mp_finished = false;
     }
 
     ImGui::Render();

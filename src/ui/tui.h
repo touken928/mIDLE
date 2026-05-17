@@ -10,6 +10,7 @@ struct TuiActions {
     bool stop = false;
     bool feed_stdin = false;
     bool quit = false;
+    bool dismiss_console = false;
 };
 
 void ApplyTheme();

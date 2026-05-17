@@ -23,22 +23,29 @@ void RenderShellPanel(App &app, TuiActions &actions, int width, int height) {
         ImGuiWindowFlags_HorizontalScrollbar);
 
     ImGui::TextUnformatted(app.shell_text.c_str());
-    ImGui::PushStyleColor(ImGuiCol_Text, app.mp_running ? theme.title : theme.muted);
-    ImGui::TextUnformatted(app.mp_running ? "> " : "$ ");
-    ImGui::PopStyleColor();
-    ImGui::SameLine();
 
-    ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue;
-    if (!app.mp_running) {
-        flags |= ImGuiInputTextFlags_ReadOnly;
-    }
-    if (app.focus_stdin || (app.mp_running && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))) {
-        ImGui::SetKeyboardFocusHere();
-        app.focus_stdin = false;
-    }
-    ImGui::SetNextItemWidth(-1.f);
-    if (ImGui::InputText("##stdin_inline", &app.stdin_text, flags)) {
-        actions.feed_stdin = true;
+    if (app.mp_finished) {
+        ImGui::PushStyleColor(ImGuiCol_Text, theme.accent);
+        ImGui::TextUnformatted("--- Press any key to exit ---");
+        ImGui::PopStyleColor();
+    } else {
+        ImGui::PushStyleColor(ImGuiCol_Text, app.mp_running ? theme.title : theme.muted);
+        ImGui::TextUnformatted(app.mp_running ? "> " : "$ ");
+        ImGui::PopStyleColor();
+        ImGui::SameLine();
+
+        ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue;
+        if (!app.mp_running) {
+            flags |= ImGuiInputTextFlags_ReadOnly;
+        }
+        if (app.focus_stdin || (app.mp_running && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))) {
+            ImGui::SetKeyboardFocusHere();
+            app.focus_stdin = false;
+        }
+        ImGui::SetNextItemWidth(-1.f);
+        if (ImGui::InputText("##stdin_inline", &app.stdin_text, flags)) {
+            actions.feed_stdin = true;
+        }
     }
 
     if (app.scroll_shell) {
