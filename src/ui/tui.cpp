@@ -7,16 +7,10 @@
 #include "imgui.h"
 
 #include <algorithm>
-#include <cstddef>
-#include <string>
 
 namespace midle {
 namespace ui {
 namespace {
-
-std::size_t CountLines(const std::string &text) {
-    return static_cast<std::size_t>(std::count(text.begin(), text.end(), '\n')) + 1;
-}
 
 bool CtrlShortcut(int control_code) {
     return ImGui::IsKeyPressed(control_code);
@@ -39,41 +33,19 @@ void RenderToolbarWindow(App &app, TuiActions &actions, int x, int y, int width,
     ImGui::SetNextWindowSize(ImVec2(static_cast<float>(width), static_cast<float>(height)), ImGuiCond_Always);
 
     ImGui::PushStyleColor(ImGuiCol_WindowBg, theme.sidebar);
-    ImGui::Begin("Toolbar", nullptr,
+    ImGui::Begin("mIDLE", nullptr,
         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
     ImGui::PopStyleColor();
 
-    ImGui::PushStyleColor(ImGuiCol_Text, theme.title);
-    ImGui::Text("mIDLE");
-    ImGui::PopStyleColor();
-    ImGui::SameLine();
-    ImGui::TextDisabled("MicroPython IDLE");
-    ImGui::SameLine();
-    if (FlatButton(app.mp_running ? "Running..." : "Run", 10, theme.run, theme.title, app.mp_running)) {
-        actions.run = !app.mp_running;
+    if (FlatButton(app.mp_running ? "Stop" : "Run", 10, theme.run, theme.title, app.mp_running)) {
+        if (app.mp_running) {
+            actions.stop = true;
+        } else {
+            actions.run = true;
+        }
     }
     ImGui::SameLine();
-    if (FlatButton("Clear", 10, theme.panel, theme.text)) {
-        actions.clear_shell = true;
-    }
-    ImGui::SameLine();
-    ImGui::TextDisabled("Status:");
-    ImGui::SameLine();
-    ImGui::PushStyleColor(ImGuiCol_Text, app.mp_running ? theme.accent : theme.text);
-    ImGui::Text("%s", app.mp_running ? "running" : "ready");
-    ImGui::PopStyleColor();
-    ImGui::SameLine();
-    ImGui::TextDisabled("|");
-    ImGui::SameLine();
-    ImGui::TextDisabled("%s", app.status_text.empty() ? "Ready" : app.status_text.c_str());
-    ImGui::SameLine();
-    ImGui::TextDisabled("|");
-    ImGui::SameLine();
-    ImGui::Text("%zu lines", CountLines(app.editor_text));
-    ImGui::SameLine();
-    ImGui::Text("%zu chars", app.editor_text.size());
-    ImGui::SameLine();
-    ImGui::TextDisabled("| Ctrl+R Run  Ctrl+L Clear  Esc Exit");
+    ImGui::TextDisabled("| Ctrl+R Run  Esc Exit");
 
     ImGui::End();
 }
@@ -149,6 +121,9 @@ void ApplyTheme() {
     style.Colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.22f, 0.25f, 0.34f, 1.f);
     style.Colors[ImGuiCol_ScrollbarGrabHovered] = theme.accent;
     style.Colors[ImGuiCol_ScrollbarGrabActive] = theme.accent;
+    style.Colors[ImGuiCol_TitleBg] = theme.sidebar;
+    style.Colors[ImGuiCol_TitleBgActive] = theme.sidebar;
+    style.Colors[ImGuiCol_TitleBgCollapsed] = theme.sidebar;
     style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(0.32f, 0.56f, 0.92f, 0.35f);
 }
 
@@ -156,10 +131,11 @@ TuiActions RenderWorkspace(App &app) {
     TuiActions actions;
 
     if (CtrlShortcut(18)) {
-        actions.run = !app.mp_running;
-    }
-    if (CtrlShortcut(12)) {
-        actions.clear_shell = true;
+        if (app.mp_running) {
+            actions.stop = true;
+        } else {
+            actions.run = true;
+        }
     }
     if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape))) {
         actions.quit = true;

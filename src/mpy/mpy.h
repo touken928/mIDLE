@@ -23,6 +23,9 @@ void input(const std::string &text);
 // Signal EOF on stdin so Python's input() / sys.stdin.read() return.
 void close_stdin();
 
+// Interrupt running MicroPython code (KeyboardInterrupt).
+void stop();
+
 // Execute synchronously and return captured stdout/stderr text.
 std::string exec(const std::string &source);
 

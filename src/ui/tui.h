@@ -7,7 +7,7 @@ namespace ui {
 
 struct TuiActions {
     bool run = false;
-    bool clear_shell = false;
+    bool stop = false;
     bool feed_stdin = false;
     bool quit = false;
 };

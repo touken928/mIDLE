@@ -5,7 +5,7 @@ TUI-based Python IDE — ImTUI terminal UI + MicroPython embedded runtime, inspi
 ## Build
 
 ```bash
-git clone --recurse-submodules https://github.com/<user>/mIDLE.git
+git clone --recurse-submodules https://github.com/touken928/mIDLE.git
 cmake -B build
 make -C build -j
 ./build/midle
@@ -27,7 +27,8 @@ mIDLE/
 │   │   ├── mpyhalport.h / .c #   HAL: stdout capture, stdin ring-buffer
 │   │   └── mpy.h / .cpp      #   C++ wrapper (midle::mpy)
 │   └── ui/
-│       ├── layout.h          #   dark theme + layout constants
+│       ├── tui.h / .cpp        #   toolbar + theme + workspace layout
+│       ├── layout.h            #   dark theme + layout constants
 │       ├── editor_panel.h / .cpp
 │       └── shell_panel.h / .cpp
 └── third_party/
@@ -49,6 +50,7 @@ midle ──→ mpy  (single static lib: MicroPython embed + HAL + C++ wrapper)
 
 midle::mpy::init(&stack_top);         // once, at startup
 midle::mpy::run_async(source);        // start Python in background thread
+midle::mpy::stop();                   // interrupt running code (KeyboardInterrupt)
 midle::mpy::input("hello\nworld");    // feed stdin (wakes blocked input())
 midle::mpy::close_stdin();            // signal EOF
 midle::mpy::take_output();            // poll captured stdout (thread-safe)
@@ -62,6 +64,9 @@ midle::mpy::deinit();                 // shutdown
 - **`input()` support:** `run_async()` runs Python in a background thread.
   When `input()` is called, the thread blocks until `mpy::input()` feeds a line.
   The shell panel shows a stdin input field while executing.
+
+- **Stop running code:** Press the Stop button or `Ctrl+R` while code is running
+  to inject a KeyboardInterrupt.
 
 - **Small terminals:** layout automatically switches from side-by-side to
   stacked when the terminal is narrower than 70 columns.

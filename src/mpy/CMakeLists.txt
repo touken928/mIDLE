@@ -42,21 +42,19 @@ if(NOT EXISTS "${MP_EMBED_DIR}/py/compile.c")
     endif()
 endif()
 
-if(WIN32)
-    message(STATUS "[mpy] regenerating headers for Windows")
-    execute_process(
-        COMMAND "${MPY_PYTHON_PROGRAM}" "${CMAKE_CURRENT_SOURCE_DIR}/regen_mpy_headers.py"
-            --cc "${MPY_CC}"
-            --python "${MPY_PYTHON_PROGRAM}"
-            --mp-top "${MP_TOP_CMAKE}"
-            --embed-dir "${MP_EMBED_DIR_CMAKE}"
-            --port-dir "${MPY_PORT_DIR_CMAKE}"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        RESULT_VARIABLE _regen_res
-    )
-    if(NOT _regen_res EQUAL 0)
-        message(FATAL_ERROR "[mpy] Windows header regeneration failed")
-    endif()
+message(STATUS "[mpy] regenerating headers")
+execute_process(
+    COMMAND "${MPY_PYTHON_PROGRAM}" "${CMAKE_CURRENT_SOURCE_DIR}/regen_mpy_headers.py"
+        --cc "${MPY_CC}"
+        --python "${MPY_PYTHON_PROGRAM}"
+        --mp-top "${MP_TOP_CMAKE}"
+        --embed-dir "${MP_EMBED_DIR_CMAKE}"
+        --port-dir "${MPY_PORT_DIR_CMAKE}"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    RESULT_VARIABLE _regen_res
+)
+if(NOT _regen_res EQUAL 0)
+    message(FATAL_ERROR "[mpy] header regeneration failed")
 endif()
 
 # ── 2.  Sources ─────────────────────────────────────────────

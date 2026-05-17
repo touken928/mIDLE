@@ -12,6 +12,7 @@
 #define MICROPY_PY_MATH                   (1)
 #define MICROPY_PY_BUILTINS               (1)
 #define MICROPY_PY_BUILTINS_INPUT         (1)
+#define MICROPY_KBD_EXCEPTION             (1)
 
 #define mp_hal_readline                   mpy_hal_readline
 

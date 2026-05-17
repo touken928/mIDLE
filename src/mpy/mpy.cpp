@@ -8,6 +8,7 @@
 
 extern "C" {
 #include "port/micropython_embed.h"
+#include "py/runtime.h"
 }
 
 namespace midle {
@@ -94,6 +95,11 @@ bool done() {
         s_running.store(false, std::memory_order_release);
     }
     return d;
+}
+
+void stop() {
+    MP_STATE_VM(mp_kbd_exception).traceback_data = NULL;
+    MP_STATE_THREAD(mp_pending_exception) = MP_OBJ_FROM_PTR(&MP_STATE_VM(mp_kbd_exception));
 }
 
 void clear_output() {

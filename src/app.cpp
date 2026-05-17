@@ -78,6 +78,7 @@ void app_frame(App &app) {
     }
 
     if (actions.run && !app.mp_running) {
+        app.shell_text.clear();
         app.stdin_text.clear();
         mpy::run_async(app.editor_text);
         app.mp_running = true;
@@ -85,10 +86,9 @@ void app_frame(App &app) {
         app.status_text = "Running";
     }
 
-    if (actions.clear_shell) {
-        app.shell_text.clear();
-        app.scroll_shell = false;
-        app.status_text = "Console cleared";
+    if (actions.stop && app.mp_running) {
+        mpy::stop();
+        app.status_text = "Stopping";
     }
 
     if (actions.quit) {
