@@ -71,6 +71,9 @@ target_link_libraries(midle PRIVATE
 if(NOT MINGW)
     target_link_libraries(midle PRIVATE m)
 endif()
+if(MINGW)
+    target_link_options(midle PRIVATE -static)
+endif()
 target_include_directories(midle PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/third_party/imtui/third-party/imgui/imgui"

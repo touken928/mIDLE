@@ -16,11 +16,11 @@ jobs:
           git submodule update --init --recursive third_party/imtui
       - run: cmake -B build
       - run: make -C build -j$(sysctl -n hw.ncpu)
-      - run: chmod +x build/midle
+      - run: cp build/midle midle-macos-arm64
       - uses: actions/upload-artifact@v4
         with:
           name: midle-macos-arm64
-          path: build/midle
+          path: midle-macos-arm64
 
   windows:
     runs-on: ubuntu-latest
@@ -43,10 +43,11 @@ jobs:
             -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
             -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
       - run: make -C build -j$(nproc)
+      - run: cp build/midle.exe midle-windows-x64.exe
       - uses: actions/upload-artifact@v4
         with:
           name: midle-windows-x64
-          path: build/midle.exe
+          path: midle-windows-x64.exe
 
   linux-musl:
     runs-on: ubuntu-latest
@@ -69,11 +70,11 @@ jobs:
           git submodule update --init --recursive third_party/imtui
       - run: cmake -B build
       - run: make -C build -j$(nproc)
-      - run: chmod +x build/midle
+      - run: cp build/midle midle-linux-musl-x64
       - uses: actions/upload-artifact@v4
         with:
           name: midle-linux-musl-x64
-          path: build/midle
+          path: midle-linux-musl-x64
 
   release:
     needs: [macos, windows, linux-musl]
@@ -85,6 +86,6 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           files: |
-            midle-macos-arm64/midle
-            midle-windows-x64/midle.exe
-            midle-linux-musl-x64/midle
+            midle-macos-arm64/midle-macos-arm64
+            midle-windows-x64/midle-windows-x64.exe
+            midle-linux-musl-x64/midle-linux-musl-x64
