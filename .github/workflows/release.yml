@@ -49,7 +49,7 @@ jobs:
           name: midle-windows-x64
           path: midle-windows-x64.exe
 
-  linux-musl:
+  linux:
     runs-on: ubuntu-latest
     container:
       image: alpine:3.20
@@ -63,21 +63,22 @@ jobs:
             make \
             g++ \
             python3 \
-            ncurses-dev
+            ncurses-dev \
+            ncurses-static
       - run: git config --global safe.directory '*'
       - run: |
           git submodule update --init
           git submodule update --init --recursive third_party/imtui
-      - run: cmake -B build
+      - run: cmake -B build -DCMAKE_EXE_LINKER_FLAGS="-static" -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" -DCURSES_NEED_NCURSES=TRUE
       - run: make -C build -j$(nproc)
-      - run: cp build/midle midle-linux-musl-x64
+      - run: cp build/midle midle-linux-x64
       - uses: actions/upload-artifact@v4
         with:
-          name: midle-linux-musl-x64
-          path: midle-linux-musl-x64
+          name: midle-linux-x64
+          path: midle-linux-x64
 
   release:
-    needs: [macos, windows, linux-musl]
+    needs: [macos, windows, linux]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -88,4 +89,4 @@ jobs:
           files: |
             midle-macos-arm64/midle-macos-arm64
             midle-windows-x64/midle-windows-x64.exe
-            midle-linux-musl-x64/midle-linux-musl-x64
+            midle-linux-x64/midle-linux-x64
