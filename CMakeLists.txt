@@ -67,8 +67,10 @@ add_executable(midle
 target_link_libraries(midle PRIVATE
     mpy
     imtui-ncurses
-    m
 )
+if(NOT MINGW)
+    target_link_libraries(midle PRIVATE m)
+endif()
 target_include_directories(midle PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/third_party/imtui/third-party/imgui/imgui"
