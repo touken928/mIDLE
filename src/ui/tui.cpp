@@ -16,36 +16,19 @@ bool CtrlShortcut(int control_code) {
     return ImGui::IsKeyPressed(control_code);
 }
 
-bool FlatButton(const char *label, int width, const ImVec4 &bg, const ImVec4 &fg, bool selected = false) {
-    const Theme &theme = GetTheme();
-    ImGui::PushStyleColor(ImGuiCol_Button, selected ? theme.selected : bg);
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, theme.hovered);
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, theme.accent);
-    ImGui::PushStyleColor(ImGuiCol_Text, fg);
-    bool pressed = ImGui::Button(label, ImVec2(static_cast<float>(std::max(width, 1)), 1.f));
-    ImGui::PopStyleColor(4);
-    return pressed;
-}
-
-void RenderToolbarWindow(App &app, TuiActions &actions, int x, int y, int width, int height) {
+void RenderStatusBar(int x, int y, int width, int height, bool mp_running) {
     const Theme &theme = GetTheme();
     ImGui::SetNextWindowPos(ImVec2(static_cast<float>(x), static_cast<float>(y)), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(static_cast<float>(width), static_cast<float>(height)), ImGuiCond_Always);
 
     ImGui::PushStyleColor(ImGuiCol_WindowBg, theme.sidebar);
-    ImGui::Begin("mIDLE", nullptr,
+    ImGui::Begin("Keys", nullptr,
         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
     ImGui::PopStyleColor();
 
-    if (FlatButton(app.mp_running ? "Stop" : "Run", 10, theme.run, theme.title, app.mp_running)) {
-        if (app.mp_running) {
-            actions.stop = true;
-        } else {
-            actions.run = true;
-        }
-    }
-    ImGui::SameLine();
-    ImGui::TextDisabled("| Ctrl+R Run  Esc Exit");
+    ImGui::PushStyleColor(ImGuiCol_Text, theme.muted);
+    ImGui::Text("Ctrl+R %s  Esc Exit", mp_running ? "Stop" : "Run");
+    ImGui::PopStyleColor();
 
     ImGui::End();
 }
@@ -143,23 +126,22 @@ TuiActions RenderWorkspace(App &app) {
 
     const int screen_w = std::max(static_cast<int>(ImGui::GetIO().DisplaySize.x), 40);
     const int screen_h = std::max(static_cast<int>(ImGui::GetIO().DisplaySize.y), 16);
-    const int toolbar_h = 3;
-    const int body_y = toolbar_h;
-    const int body_h = std::max(screen_h - toolbar_h, 10);
-
-    RenderToolbarWindow(app, actions, 0, 0, screen_w, toolbar_h);
+    const int status_h = 2;
+    const int body_h = std::max(screen_h - status_h, 10);
 
     if (screen_w < kNarrowColumns) {
         const int editor_h = std::max(6, body_h * 3 / 5);
         const int console_h = std::max(6, body_h - editor_h);
-        RenderEditorWindow(app, 0, body_y, screen_w, editor_h);
-        RenderConsoleWindow(app, actions, 0, body_y + editor_h, screen_w, console_h);
+        RenderEditorWindow(app, 0, 0, screen_w, editor_h);
+        RenderConsoleWindow(app, actions, 0, editor_h, screen_w, console_h);
     } else {
         const int editor_w = std::max(24, screen_w * 2 / 3);
         const int console_w = std::max(16, screen_w - editor_w);
-        RenderEditorWindow(app, 0, body_y, editor_w, body_h);
-        RenderConsoleWindow(app, actions, editor_w, body_y, console_w, body_h);
+        RenderEditorWindow(app, 0, 0, editor_w, body_h);
+        RenderConsoleWindow(app, actions, editor_w, 0, console_w, body_h);
     }
+
+    RenderStatusBar(0, screen_h - status_h, screen_w, status_h, app.mp_running);
     return actions;
 }
 
