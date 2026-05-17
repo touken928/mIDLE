@@ -32,7 +32,7 @@ void RenderShellPanel(App &app, TuiActions &actions, int width, int height) {
     if (!app.mp_running) {
         flags |= ImGuiInputTextFlags_ReadOnly;
     }
-    if (app.focus_stdin) {
+    if (app.focus_stdin || (app.mp_running && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))) {
         ImGui::SetKeyboardFocusHere();
         app.focus_stdin = false;
     }
