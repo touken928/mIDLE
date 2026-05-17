@@ -39,7 +39,7 @@ void RenderEditorWindow(App &app, int x, int y, int width, int height) {
     ImGui::SetNextWindowSize(ImVec2(static_cast<float>(width), static_cast<float>(height)), ImGuiCond_Always);
 
     ImGui::PushStyleColor(ImGuiCol_WindowBg, theme.main);
-    ImGui::Begin("Editor", nullptr,
+    ImGui::Begin("mIDLE", nullptr,
         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
     ImGui::PopStyleColor();
 
@@ -48,17 +48,35 @@ void RenderEditorWindow(App &app, int x, int y, int width, int height) {
     ImGui::End();
 }
 
-void RenderConsoleWindow(App &app, TuiActions &actions, int x, int y, int width, int height) {
+void RenderConsolePopup(App &app, TuiActions &actions, int screen_w, int screen_h) {
+    if (!app.mp_running) {
+        return;
+    }
     const Theme &theme = GetTheme();
-    ImGui::SetNextWindowPos(ImVec2(static_cast<float>(x), static_cast<float>(y)), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(static_cast<float>(width), static_cast<float>(height)), ImGuiCond_Always);
+    const int popup_w = std::max(24, screen_w * 1 / 2);
+    const int popup_h = std::max(10, screen_h * 2 / 5);
+    const int popup_x = screen_w - popup_w;
+    const int popup_y = screen_h - popup_h - 1;  // above status bar
+
+    ImGui::SetNextWindowPos(ImVec2(static_cast<float>(popup_x), static_cast<float>(popup_y)), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(static_cast<float>(popup_w), static_cast<float>(popup_h)), ImGuiCond_FirstUseEver);
 
     ImGui::PushStyleColor(ImGuiCol_WindowBg, theme.panel);
-    ImGui::Begin("Console", nullptr,
-        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
+    bool open = true;
+    if (!ImGui::Begin("Console", &open)) {
+        ImGui::PopStyleColor();
+        ImGui::End();
+        return;
+    }
     ImGui::PopStyleColor();
+
+    if (!open) {
+        actions.stop = true;
+    }
+
     const int panel_h = static_cast<int>(ImGui::GetContentRegionAvail().y);
-    RenderShellPanel(app, actions, std::max(width - 2, 8), std::max(panel_h, 6));
+    RenderShellPanel(app, actions, std::max(static_cast<int>(ImGui::GetContentRegionAvail().x), 8), std::max(panel_h, 6));
+
     ImGui::End();
 }
 
@@ -129,18 +147,8 @@ TuiActions RenderWorkspace(App &app) {
     const int status_h = 1;
     const int body_h = screen_h - status_h;
 
-    if (screen_w < kNarrowColumns) {
-        const int editor_h = std::max(3, body_h * 3 / 5);
-        const int console_h = body_h - editor_h;
-        RenderEditorWindow(app, 0, 0, screen_w, editor_h);
-        RenderConsoleWindow(app, actions, 0, editor_h, screen_w, console_h);
-    } else {
-        const int editor_w = std::max(24, screen_w * 2 / 3);
-        const int console_w = std::max(16, screen_w - editor_w);
-        RenderEditorWindow(app, 0, 0, editor_w, body_h);
-        RenderConsoleWindow(app, actions, editor_w, 0, console_w, body_h);
-    }
-
+    RenderEditorWindow(app, 0, 0, screen_w, body_h);
+    RenderConsolePopup(app, actions, screen_w, screen_h);
     RenderStatusBar(0, screen_h - status_h, screen_w, status_h, app.mp_running);
     return actions;
 }
