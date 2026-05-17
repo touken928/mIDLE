@@ -22,8 +22,8 @@ void RenderStatusBar(int x, int y, int width, int height, bool mp_running) {
     ImGui::SetNextWindowSize(ImVec2(static_cast<float>(width), static_cast<float>(height)), ImGuiCond_Always);
 
     ImGui::PushStyleColor(ImGuiCol_WindowBg, theme.sidebar);
-    ImGui::Begin("Keys", nullptr,
-        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
+    ImGui::Begin("##status", nullptr,
+        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
     ImGui::PopStyleColor();
 
     ImGui::PushStyleColor(ImGuiCol_Text, theme.muted);
@@ -126,12 +126,12 @@ TuiActions RenderWorkspace(App &app) {
 
     const int screen_w = std::max(static_cast<int>(ImGui::GetIO().DisplaySize.x), 40);
     const int screen_h = std::max(static_cast<int>(ImGui::GetIO().DisplaySize.y), 16);
-    const int status_h = 2;
-    const int body_h = std::max(screen_h - status_h, 10);
+    const int status_h = 1;
+    const int body_h = screen_h - status_h;
 
     if (screen_w < kNarrowColumns) {
-        const int editor_h = std::max(6, body_h * 3 / 5);
-        const int console_h = std::max(6, body_h - editor_h);
+        const int editor_h = std::max(3, body_h * 3 / 5);
+        const int console_h = body_h - editor_h;
         RenderEditorWindow(app, 0, 0, screen_w, editor_h);
         RenderConsoleWindow(app, actions, 0, editor_h, screen_w, console_h);
     } else {
