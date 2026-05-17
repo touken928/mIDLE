@@ -1,0 +1,9 @@
+build/
+build-embed/
+src/mpy/build-embed/
+.cache/
+*.o
+*.a
+*.so
+.DS_Store
+compile_commands.json
