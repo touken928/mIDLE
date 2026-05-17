@@ -69,7 +69,10 @@ jobs:
       - run: |
           # Remove dynamic libs so cmake finds only static .a files
           rm -f /usr/lib/libncurses.so /usr/lib/libncursesw.so \
-                /usr/lib/libtinfo.so /usr/lib/libtinfow.so
+                /usr/lib/libtinfo.so /usr/lib/libtinfow.so \
+                /usr/lib/libform.so /usr/lib/libformw.so \
+                /usr/lib/libpanel.so /usr/lib/libpanelw.so \
+                /usr/lib/libmenu.so /usr/lib/libmenuw.so
           git submodule update --init
           git submodule update --init --recursive third_party/imtui
       - run: cmake -B build -DCMAKE_EXE_LINKER_FLAGS="-static"
