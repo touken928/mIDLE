@@ -100,6 +100,7 @@ bool done() {
 void stop() {
     MP_STATE_VM(mp_kbd_exception).traceback_data = NULL;
     MP_STATE_THREAD(mp_pending_exception) = MP_OBJ_FROM_PTR(&MP_STATE_VM(mp_kbd_exception));
+    mpy_stdin_feed("\x03", 1);
 }
 
 void clear_output() {
