@@ -105,6 +105,8 @@ def main():
     sources.extend(glob.glob(os.path.join(args.mp_top, "extmod", "modjson.c")))
     sources.extend(glob.glob(os.path.join(args.mp_top, "extmod", "modrandom.c")))
     sources.extend(glob.glob(os.path.join(args.mp_top, "extmod", "modheapq.c")))
+    sources.extend(glob.glob(os.path.join(args.mp_top, "extmod", "modbinascii.c")))
+    sources.extend(glob.glob(os.path.join(args.mp_top, "extmod", "modhashlib.c")))
 
     qstrs, modules, roots = collect_from_sources(args.cc, include_dirs, sorted(sources))
 

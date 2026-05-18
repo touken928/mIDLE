@@ -16,10 +16,14 @@
 #define MICROPY_PY_BUILTINS_INPUT         (1)
 #define MICROPY_PY_JSON                   (1)
 #define MICROPY_PY_RANDOM                 (1)
+#define MICROPY_PY_RANDOM_EXTRA_FUNCS     (1)
 #define MICROPY_PY_HEAPQ                  (1)
+#define MICROPY_PY_BINASCII               (1)
+#define MICROPY_PY_HASHLIB                (1)
+#define MICROPY_PY_COLLECTIONS_DEQUE      (1)
+#define MICROPY_KBD_EXCEPTION             (1)
 #define MICROPY_ENABLE_EXTERNAL_IMPORT    (0)
 #define MICROPY_PY_IO                     (1)
-#define MICROPY_KBD_EXCEPTION             (1)
 
 #define mp_hal_readline                   mpy_hal_readline
 

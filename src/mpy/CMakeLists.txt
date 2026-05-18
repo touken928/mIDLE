@@ -68,6 +68,8 @@ file(GLOB EMBED_EXTMOD_SOURCES
     "${MP_TOP}/extmod/modjson.c"
     "${MP_TOP}/extmod/modrandom.c"
     "${MP_TOP}/extmod/modheapq.c"
+    "${MP_TOP}/extmod/modbinascii.c"
+    "${MP_TOP}/extmod/modhashlib.c"
 )
 
 # ── 3.  mpy library (C + C++) ───────────────────────────────
