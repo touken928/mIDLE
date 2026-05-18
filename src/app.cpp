@@ -7,6 +7,7 @@
 #include "imtui/imtui-impl-text.h"
 #include "imtui/imtui.h"
 
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 
@@ -24,6 +25,8 @@ std::string load_file(const char *path) {
 }
 
 void save_file(const std::string &path, const std::string &content) {
+    std::filesystem::path p(path);
+    std::filesystem::create_directories(p.parent_path());
     std::ofstream f(path);
     f << content;
 }

@@ -39,7 +39,7 @@ void RenderEditorWindow(App &app, int x, int y, int width, int height) {
     ImGui::SetNextWindowPos(ImVec2(static_cast<float>(x), static_cast<float>(y)), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(static_cast<float>(width), static_cast<float>(height)), ImGuiCond_Always);
 
-    std::string title = app.file_path.empty() ? "mIDLE" : app.file_path;
+    std::string title = app.file_path.empty() ? "mIDLE" : "mIDLE - " + app.file_path;
     ImGui::PushStyleColor(ImGuiCol_WindowBg, theme.main);
     ImGui::Begin(title.c_str(), nullptr,
         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
