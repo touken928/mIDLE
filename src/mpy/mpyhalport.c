@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include "py/misc.h"
 #include "py/mphal.h"
+#include "py/runtime.h"
+#include "py/builtin.h"
+#include "py/mperrno.h"
 #include "shared/readline/readline.h"
 
 #ifndef __EMSCRIPTEN__
@@ -14,6 +17,18 @@ static pthread_mutex_t g_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 #define LOCK()   pthread_mutex_lock(&g_mtx)
 #define UNLOCK() pthread_mutex_unlock(&g_mtx)
+
+// Stub: mIDLE manages interrupts via mpy::stop(), not per-char
+void mp_hal_set_interrupt_char(int c) { (void)c; }
+
+// Stub: no filesystem in embedded mode
+mp_obj_t mp_builtin_open(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args) {
+    (void)n_args;
+    (void)args;
+    (void)kw_args;
+    mp_raise_OSError(MP_ENOENT);
+}
+MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 0, mp_builtin_open);
 
 // ── Output buffer ────────────────────────────────────────────
 #define OUTPUT_CAP (256 * 1024)

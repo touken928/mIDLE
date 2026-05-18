@@ -102,6 +102,9 @@ def main():
     sources.extend(glob.glob(os.path.join(args.embed_dir, "py", "*.c")))
     sources.extend(glob.glob(os.path.join(args.embed_dir, "shared", "runtime", "*.c")))
     sources.extend(glob.glob(os.path.join(args.embed_dir, "port", "*.c")))
+    sources.extend(glob.glob(os.path.join(args.mp_top, "extmod", "modjson.c")))
+    sources.extend(glob.glob(os.path.join(args.mp_top, "extmod", "modrandom.c")))
+    sources.extend(glob.glob(os.path.join(args.mp_top, "extmod", "modheapq.c")))
 
     qstrs, modules, roots = collect_from_sources(args.cc, include_dirs, sorted(sources))
 

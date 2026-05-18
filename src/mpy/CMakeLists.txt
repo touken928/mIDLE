@@ -64,9 +64,16 @@ file(GLOB_RECURSE EMBED_C_SOURCES
     "${MP_EMBED_DIR}/port/embed_util.c"
 )
 
+file(GLOB EMBED_EXTMOD_SOURCES
+    "${MP_TOP}/extmod/modjson.c"
+    "${MP_TOP}/extmod/modrandom.c"
+    "${MP_TOP}/extmod/modheapq.c"
+)
+
 # ── 3.  mpy library (C + C++) ───────────────────────────────
 add_library(mpy STATIC
     ${EMBED_C_SOURCES}
+    ${EMBED_EXTMOD_SOURCES}
     mpyhalport.c                # HAL (output capture)
     mpy.cpp                     # C++ wrapper
 )
@@ -77,6 +84,7 @@ target_include_directories(mpy PUBLIC
     "${MP_EMBED_DIR}/port"                  # micropython_embed.h
     "${MP_EMBED_DIR}/genhdr"                # qstrdefs.generated.h
     "${MP_EMBED_DIR}/py"                    # py headers
+    "${MP_TOP}/extmod"                      # extmod headers (e.g. modtime.h)
     "${CMAKE_CURRENT_SOURCE_DIR}"           # mpconfigport.h, mpyhalport.h, mpy.h
 )
 
