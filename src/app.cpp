@@ -11,6 +11,11 @@
 #include <fstream>
 #include <sstream>
 
+#ifdef __unix__
+#include <termios.h>
+#include <unistd.h>
+#endif
+
 namespace midle {
 namespace {
 
@@ -26,8 +31,13 @@ std::string load_file(const char *path) {
 
 void save_file(const std::string &path, const std::string &content) {
     std::filesystem::path p(path);
-    std::filesystem::create_directories(p.parent_path());
+    auto parent = p.parent_path();
+    if (!parent.empty()) {
+        std::error_code ec;
+        std::filesystem::create_directories(parent, ec);
+    }
     std::ofstream f(path);
+    if (!f) return;
     f << content;
 }
 
@@ -45,6 +55,14 @@ void app_init(App &app, const char *file_path) {
     ImGui::CreateContext();
     g_screen = ImTui_ImplNcurses_Init(true);
     ImTui_ImplText_Init();
+
+#ifdef __unix__
+    // Disable XON/XOFF flow control so Ctrl+S reaches ncurses
+    struct termios t;
+    tcgetattr(STDIN_FILENO, &t);
+    t.c_iflag &= ~(IXON | IXOFF);
+    tcsetattr(STDIN_FILENO, TCSANOW, &t);
+#endif
 
     ImGuiIO &io = ImGui::GetIO();
     io.IniFilename = nullptr;

@@ -49,6 +49,7 @@ int main(int argc, char *argv[]) {
         }
         int stack_top = 0;
         midle::mpy::init(&stack_top);
+        midle::mpy::close_stdin();
         std::string output = midle::mpy::exec(source);
         midle::mpy::deinit();
         std::cout << output;
