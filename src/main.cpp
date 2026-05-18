@@ -1,11 +1,15 @@
 #include "app.h"
 #include "mpy/mpy.h"
 
+#include <chrono>
+#include <cstdio>
+#include <cstring>
 #include <exception>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <thread>
 
 static std::string load_file(const char *path) {
     std::ifstream f(path);
@@ -19,6 +23,35 @@ static void print_usage(const char *prog) {
     std::cerr << "Usage: " << prog << " [--run] <file>\n"
               << "  --run    execute script and print output, then exit\n"
               << "  <file>   open file in the editor (default: interactive mode)\n";
+}
+
+static int run_mode_exec(const std::string &source) {
+    int stack_top = 0;
+    midle::mpy::init(&stack_top);
+    midle::mpy::run_async(source);
+
+    std::thread stdin_thread([]{
+        char buf[4096];
+        while (fgets(buf, sizeof(buf), stdin)) {
+            size_t len = std::strlen(buf);
+            if (len > 0 && buf[len - 1] == '\n') buf[len - 1] = '\0';
+            midle::mpy::input(buf);
+        }
+        midle::mpy::close_stdin();
+    });
+
+    while (!midle::mpy::done()) {
+        std::string out = midle::mpy::take_output();
+        if (!out.empty()) std::cout << out << std::flush;
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    std::string out = midle::mpy::take_output();
+    if (!out.empty()) std::cout << out;
+
+    midle::mpy::deinit();
+    stdin_thread.detach();
+    return 0;
 }
 
 int main(int argc, char *argv[]) {
@@ -47,13 +80,7 @@ int main(int argc, char *argv[]) {
             std::cerr << "Error: cannot read " << file << "\n";
             return 1;
         }
-        int stack_top = 0;
-        midle::mpy::init(&stack_top);
-        midle::mpy::close_stdin();
-        std::string output = midle::mpy::exec(source);
-        midle::mpy::deinit();
-        std::cout << output;
-        return 0;
+        return run_mode_exec(source);
     }
 
     try {
