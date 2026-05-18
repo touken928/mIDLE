@@ -28,8 +28,13 @@ void RenderStatusBar(int x, int y, int width, int height, const App &app) {
     ImGui::PopStyleColor();
 
     ImGui::PushStyleColor(ImGuiCol_Text, theme.muted);
-    ImGui::Text("Ctrl+R %s  Ctrl+S Save  Esc Exit", app.mp_running ? "Stop" : "Run");
+    ImGui::Text("Ctrl+R %s  Ctrl+W Save  Esc Exit",
+        app.mp_running ? "Stop" : "Run");
     ImGui::PopStyleColor();
+    if (!app.status_text.empty()) {
+        ImGui::SameLine();
+        ImGui::TextDisabled("| %s", app.status_text.c_str());
+    }
 
     ImGui::End();
 }
@@ -154,7 +159,7 @@ TuiActions RenderWorkspace(App &app) {
             actions.run = true;
         }
     }
-    if (CtrlShortcut(19)) {
+    if (CtrlShortcut(19) || CtrlShortcut(23)) {
         actions.save = true;
     }
     if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape))) {

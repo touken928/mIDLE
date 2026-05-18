@@ -154,9 +154,13 @@ void app_frame(App &app) {
         app.mp_finished = false;
     }
 
-    if (actions.save && !app.file_path.empty()) {
-        save_file(app.file_path, app.editor_text);
-        app.status_text = std::string("Saved ") + app.file_path;
+    if (actions.save) {
+        if (!app.file_path.empty()) {
+            save_file(app.file_path, app.editor_text);
+            app.status_text = std::string("Saved ") + app.file_path;
+        } else {
+            app.status_text = "No file to save. Run: midle <file>";
+        }
     }
 
     ImGui::Render();
