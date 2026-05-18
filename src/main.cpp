@@ -3,10 +3,10 @@
 #include <exception>
 #include <iostream>
 
-int main() {
+int main(int argc, char *argv[]) {
     try {
         midle::App app;
-        midle::app_init(app);
+        midle::app_init(app, argc > 1 ? argv[1] : nullptr);
 
         while (app.running) {
             midle::app_frame(app);

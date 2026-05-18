@@ -7,6 +7,7 @@
 #include "imgui.h"
 
 #include <algorithm>
+#include <string>
 
 namespace midle {
 namespace ui {
@@ -16,7 +17,7 @@ bool CtrlShortcut(int control_code) {
     return ImGui::IsKeyPressed(control_code);
 }
 
-void RenderStatusBar(int x, int y, int width, int height, bool mp_running) {
+void RenderStatusBar(int x, int y, int width, int height, const App &app) {
     const Theme &theme = GetTheme();
     ImGui::SetNextWindowPos(ImVec2(static_cast<float>(x), static_cast<float>(y)), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(static_cast<float>(width), static_cast<float>(height)), ImGuiCond_Always);
@@ -27,7 +28,7 @@ void RenderStatusBar(int x, int y, int width, int height, bool mp_running) {
     ImGui::PopStyleColor();
 
     ImGui::PushStyleColor(ImGuiCol_Text, theme.muted);
-    ImGui::Text("Ctrl+R %s  Esc Exit", mp_running ? "Stop" : "Run");
+    ImGui::Text("Ctrl+R %s  Ctrl+S Save  Esc Exit", app.mp_running ? "Stop" : "Run");
     ImGui::PopStyleColor();
 
     ImGui::End();
@@ -38,8 +39,9 @@ void RenderEditorWindow(App &app, int x, int y, int width, int height) {
     ImGui::SetNextWindowPos(ImVec2(static_cast<float>(x), static_cast<float>(y)), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(static_cast<float>(width), static_cast<float>(height)), ImGuiCond_Always);
 
+    std::string title = app.file_path.empty() ? "mIDLE" : app.file_path;
     ImGui::PushStyleColor(ImGuiCol_WindowBg, theme.main);
-    ImGui::Begin("mIDLE", nullptr,
+    ImGui::Begin(title.c_str(), nullptr,
         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
     ImGui::PopStyleColor();
 
@@ -152,6 +154,9 @@ TuiActions RenderWorkspace(App &app) {
             actions.run = true;
         }
     }
+    if (CtrlShortcut(19)) {
+        actions.save = true;
+    }
     if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape))) {
         actions.quit = true;
     }
@@ -163,7 +168,7 @@ TuiActions RenderWorkspace(App &app) {
 
     RenderEditorWindow(app, 0, 0, screen_w, body_h);
     RenderConsolePopup(app, actions, screen_w, screen_h);
-    RenderStatusBar(0, screen_h - status_h, screen_w, status_h, app.mp_running);
+    RenderStatusBar(0, screen_h - status_h, screen_w, status_h, app);
     return actions;
 }
 

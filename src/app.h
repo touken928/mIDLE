@@ -16,9 +16,10 @@ struct App {
     std::string shell_text;
     std::string stdin_text;
     std::string status_text;
+    std::string file_path;
 };
 
-void app_init(App &app);
+void app_init(App &app, const char *file_path = nullptr);
 void app_frame(App &app);
 void app_shutdown(App &app);
 

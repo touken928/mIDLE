@@ -7,10 +7,26 @@
 #include "imtui/imtui-impl-text.h"
 #include "imtui/imtui.h"
 
+#include <fstream>
+#include <sstream>
+
 namespace midle {
 namespace {
 
 ImTui::TScreen *g_screen = nullptr;
+
+std::string load_file(const char *path) {
+    std::ifstream f(path);
+    if (!f) return {};
+    std::ostringstream ss;
+    ss << f.rdbuf();
+    return ss.str();
+}
+
+void save_file(const std::string &path, const std::string &content) {
+    std::ofstream f(path);
+    f << content;
+}
 
 void append_output(App &app) {
     std::string out = mpy::take_output();
@@ -22,7 +38,7 @@ void append_output(App &app) {
 
 } // namespace
 
-void app_init(App &app) {
+void app_init(App &app, const char *file_path) {
     ImGui::CreateContext();
     g_screen = ImTui_ImplNcurses_Init(true);
     ImTui_ImplText_Init();
@@ -33,12 +49,24 @@ void app_init(App &app) {
     int stack_top = 0;
     mpy::init(&stack_top);
 
-    app.editor_text =
-        "# Welcome to mIDLE\n"
-        "name = input('Your name: ')\n"
-        "print('Hello,', name)\n";
+    if (file_path && file_path[0]) {
+        app.file_path = file_path;
+        std::string content = load_file(file_path);
+        if (!content.empty()) {
+            app.editor_text = content;
+            app.status_text = std::string("Loaded ") + file_path;
+        } else {
+            app.editor_text.clear();
+            app.status_text = std::string("New ") + file_path;
+        }
+    } else {
+        app.editor_text =
+            "# Welcome to mIDLE\n"
+            "name = input('Your name: ')\n"
+            "print('Hello,', name)\n";
+        app.status_text = "Ready";
+    }
     app.shell_text.clear();
-    app.status_text = "Ready";
 }
 
 void app_shutdown(App &) {
@@ -103,6 +131,11 @@ void app_frame(App &app) {
 
     if (actions.dismiss_console) {
         app.mp_finished = false;
+    }
+
+    if (actions.save && !app.file_path.empty()) {
+        save_file(app.file_path, app.editor_text);
+        app.status_text = std::string("Saved ") + app.file_path;
     }
 
     ImGui::Render();
