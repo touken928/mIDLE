@@ -32,8 +32,8 @@ Download a prebuilt binary from [Releases](https://github.com/touken928/mIDLE/re
 ```bash
 git clone --recurse-submodules https://github.com/touken928/mIDLE.git
 cd mIDLE
-cmake -B build
-make -C build -j
+cmake --preset default
+cmake --build --preset default -j
 ./build/midle
 ```
 

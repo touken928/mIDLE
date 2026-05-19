@@ -14,8 +14,8 @@ jobs:
       - run: |
           git submodule update --init
           git submodule update --init --recursive third_party/imtui
-      - run: cmake -B build
-      - run: make -C build -j$(sysctl -n hw.ncpu)
+      - run: cmake --preset default
+      - run: cmake --build --preset default -j$(sysctl -n hw.ncpu)
       - run: cp build/midle midle-macos-arm64
       - uses: actions/upload-artifact@v4
         with:
@@ -33,17 +33,9 @@ jobs:
       - run: |
           git submodule update --init
           git submodule update --init --recursive third_party/imtui third_party/pdcurses
-      - run: |
-          cmake -B build \
-            -DCMAKE_SYSTEM_NAME=Windows \
-            -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
-            -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
-            -DCMAKE_FIND_ROOT_PATH=/usr/x86_64-w64-mingw32 \
-            -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER \
-            -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
-            -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
-      - run: make -C build -j$(nproc)
-      - run: cp build/midle.exe midle-windows-x64.exe
+      - run: cmake --preset windows-cross
+      - run: cmake --build --preset windows-cross -j$(nproc)
+      - run: cp build-windows/midle.exe midle-windows-x64.exe
       - uses: actions/upload-artifact@v4
         with:
           name: midle-windows-x64
@@ -67,7 +59,6 @@ jobs:
             ncurses-static
       - run: git config --global safe.directory '*'
       - run: |
-          # Remove dynamic libs so cmake finds only static .a files
           rm -f /usr/lib/libncurses.so /usr/lib/libncursesw.so \
                 /usr/lib/libtinfo.so /usr/lib/libtinfow.so \
                 /usr/lib/libform.so /usr/lib/libformw.so \
@@ -75,9 +66,9 @@ jobs:
                 /usr/lib/libmenu.so /usr/lib/libmenuw.so
           git submodule update --init
           git submodule update --init --recursive third_party/imtui
-      - run: cmake -B build -DCMAKE_EXE_LINKER_FLAGS="-static"
-      - run: make -C build -j$(nproc)
-      - run: cp build/midle midle-linux-x64
+      - run: cmake --preset linux-static
+      - run: cmake --build --preset linux-static -j$(nproc)
+      - run: cp build-static/midle midle-linux-x64
       - uses: actions/upload-artifact@v4
         with:
           name: midle-linux-x64
