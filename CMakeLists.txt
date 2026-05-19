@@ -19,6 +19,7 @@ add_subdirectory(third_party/imtui)  # imtui-ncurses, imtui, imgui-for-imtui
 add_executable(midle
     src/main.cpp
     src/app.cpp
+    src/io/file_io.cpp
     src/ui/tui.cpp
     src/ui/editor_panel.cpp
     src/ui/shell_panel.cpp

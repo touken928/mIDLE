@@ -1,15 +1,12 @@
 #include "app.h"
 
+#include "io/file_io.h"
 #include "mpy/mpy.h"
 #include "ui/tui.h"
 
 #include "imtui/imtui-impl-ncurses.h"
 #include "imtui/imtui-impl-text.h"
 #include "imtui/imtui.h"
-
-#include <filesystem>
-#include <fstream>
-#include <sstream>
 
 #ifdef __unix__
 #include <termios.h>
@@ -21,35 +18,23 @@ namespace {
 
 ImTui::TScreen *g_screen = nullptr;
 
-std::string load_file(const char *path) {
-    std::ifstream f(path);
-    if (!f) return {};
-    std::ostringstream ss;
-    ss << f.rdbuf();
-    return ss.str();
-}
-
-void save_file(const std::string &path, const std::string &content) {
-    std::filesystem::path p(path);
-    auto parent = p.parent_path();
-    if (!parent.empty()) {
-        std::error_code ec;
-        std::filesystem::create_directories(parent, ec);
-    }
-    std::ofstream f(path);
-    if (!f) return;
-    f << content;
-}
-
 void append_output(App &app) {
     std::string out = mpy::take_output();
     if (!out.empty()) {
-        app.shell_text += out;
+        append_shell_text(app.shell_text, out);
         app.scroll_shell = true;
     }
 }
 
 } // namespace
+
+void append_shell_text(std::string &shell, const std::string &chunk) {
+    if (chunk.empty()) return;
+    shell += chunk;
+    if (shell.size() > kShellTextMax) {
+        shell.erase(0, shell.size() - kShellTextMax);
+    }
+}
 
 void app_init(App &app, const char *file_path) {
     ImGui::CreateContext();
@@ -72,13 +57,22 @@ void app_init(App &app, const char *file_path) {
 
     if (file_path && file_path[0]) {
         app.file_path = file_path;
-        std::string content = load_file(file_path);
-        if (!content.empty()) {
-            app.editor_text = content;
-            app.status_text = std::string("Loaded ") + file_path;
-        } else {
+        FileLoadResult loaded = load_file(file_path);
+        switch (loaded.status) {
+        case FileLoadStatus::Ok:
+            app.editor_text = std::move(loaded.content);
+            app.status_text = loaded.content.empty()
+                ? std::string("Loaded empty ") + file_path
+                : std::string("Loaded ") + file_path;
+            break;
+        case FileLoadStatus::NotFound:
             app.editor_text.clear();
-            app.status_text = std::string("New ") + file_path;
+            app.status_text = std::string("Cannot open ") + file_path;
+            break;
+        case FileLoadStatus::IOError:
+            app.editor_text.clear();
+            app.status_text = std::string("Cannot read ") + file_path;
+            break;
         }
     } else {
         app.editor_text =
@@ -121,7 +115,7 @@ void app_frame(App &app) {
     ui::TuiActions actions = ui::RenderWorkspace(app);
 
     if (actions.feed_stdin && app.mp_running) {
-        app.shell_text += app.stdin_text + "\n";
+        append_shell_text(app.shell_text, app.stdin_text + "\n");
         mpy::input(app.stdin_text);
         app.stdin_text.clear();
         app.scroll_shell = true;

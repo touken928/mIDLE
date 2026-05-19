@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <string>
 
 namespace midle {
@@ -18,6 +19,11 @@ struct App {
     std::string status_text;
     std::string file_path;
 };
+
+// Keep shell output bounded (matches HAL stdout cap).
+constexpr std::size_t kShellTextMax = 256 * 1024;
+
+void append_shell_text(std::string &shell, const std::string &chunk);
 
 void app_init(App &app, const char *file_path = nullptr);
 void app_frame(App &app);

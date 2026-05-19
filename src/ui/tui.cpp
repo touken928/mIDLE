@@ -1,6 +1,7 @@
 #include "tui.h"
 
 #include "editor_panel.h"
+#include "keys.h"
 #include "layout.h"
 #include "shell_panel.h"
 
@@ -13,10 +14,6 @@ namespace midle {
 namespace ui {
 namespace {
 
-bool CtrlShortcut(int control_code) {
-    return ImGui::IsKeyPressed(control_code);
-}
-
 void RenderStatusBar(int x, int y, int width, int height, const App &app) {
     const Theme &theme = GetTheme();
     ImGui::SetNextWindowPos(ImVec2(static_cast<float>(x), static_cast<float>(y)), ImGuiCond_Always);
@@ -28,7 +25,7 @@ void RenderStatusBar(int x, int y, int width, int height, const App &app) {
     ImGui::PopStyleColor();
 
     ImGui::PushStyleColor(ImGuiCol_Text, theme.muted);
-    ImGui::Text("Ctrl+R %s  Ctrl+W Save  Esc Exit",
+    ImGui::Text("Ctrl+R %s  Ctrl+S Save  Esc Exit",
         app.mp_running ? "Stop" : "Run");
     ImGui::PopStyleColor();
     if (!app.status_text.empty()) {
@@ -152,14 +149,14 @@ void ApplyTheme() {
 TuiActions RenderWorkspace(App &app) {
     TuiActions actions;
 
-    if (CtrlShortcut(18)) {
+    if (NcursesCtrlPressed(kNcursesCtrlR)) {
         if (app.mp_running) {
             actions.stop = true;
         } else {
             actions.run = true;
         }
     }
-    if (CtrlShortcut(19) || CtrlShortcut(23)) {
+    if (NcursesCtrlPressed(kNcursesCtrlS) || NcursesCtrlPressed(kNcursesCtrlW)) {
         actions.save = true;
     }
     if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape))) {

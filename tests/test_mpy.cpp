@@ -102,24 +102,19 @@ TEST_F(MpyTest, RunAsyncCloseStdin) {
 }
 
 TEST_F(MpyTest, StopInterruptsExecution) {
-    mpy::run_async(
-        "x = 0\n"
-        "for i in range(1000000):\n"
-        "    x += 1\n"
-        "print(x)\n"
-    );
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    mpy::run_async("while True:\n    pass\n");
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
     mpy::stop();
-    std::string output;
-    for (int i = 0; i < 200 && !mpy::done(); i++) {
-        std::string chunk = mpy::take_output();
-        output += chunk;
+    bool finished = false;
+    for (int i = 0; i < 300; i++) {
+        (void)mpy::take_output();
+        if (mpy::done()) {
+            finished = true;
+            break;
+        }
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
-    std::string chunk = mpy::take_output();
-    output += chunk;
-    EXPECT_TRUE(mpy::done());
-    // The output should contain KeyboardInterrupt or be empty
+    EXPECT_TRUE(finished) << "expected stop() to end execution";
 }
 
 TEST_F(MpyTest, RunAsyncSequential) {

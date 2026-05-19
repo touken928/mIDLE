@@ -1,23 +1,18 @@
 #include "app.h"
+#include "io/file_io.h"
 #include "mpy/mpy.h"
 
 #include <chrono>
 #include <cstdio>
 #include <cstring>
 #include <exception>
-#include <fstream>
 #include <iostream>
-#include <sstream>
 #include <string>
 #include <thread>
 
-static std::string load_file(const char *path) {
-    std::ifstream f(path);
-    if (!f) return {};
-    std::ostringstream ss;
-    ss << f.rdbuf();
-    return ss.str();
-}
+#ifdef __unix__
+#include <unistd.h>
+#endif
 
 static void print_usage(const char *prog) {
     std::cerr << "Usage: " << prog << " [--run] <file>\n"
@@ -30,15 +25,27 @@ static int run_mode_exec(const std::string &source) {
     midle::mpy::init(&stack_top);
     midle::mpy::run_async(source);
 
-    std::thread stdin_thread([]{
-        char buf[4096];
-        while (fgets(buf, sizeof(buf), stdin)) {
-            size_t len = std::strlen(buf);
-            if (len > 0 && buf[len - 1] == '\n') buf[len - 1] = '\0';
-            midle::mpy::input(buf);
-        }
+    const bool stdin_tty =
+#ifdef __unix__
+        isatty(STDIN_FILENO);
+#else
+        false;
+#endif
+
+    std::thread stdin_thread;
+    if (stdin_tty) {
+        stdin_thread = std::thread([]{
+            char buf[4096];
+            while (fgets(buf, sizeof(buf), stdin)) {
+                size_t len = std::strlen(buf);
+                if (len > 0 && buf[len - 1] == '\n') buf[len - 1] = '\0';
+                midle::mpy::input(buf);
+            }
+            midle::mpy::close_stdin();
+        });
+    } else {
         midle::mpy::close_stdin();
-    });
+    }
 
     while (!midle::mpy::done()) {
         std::string out = midle::mpy::take_output();
@@ -50,7 +57,9 @@ static int run_mode_exec(const std::string &source) {
     if (!out.empty()) std::cout << out;
 
     midle::mpy::deinit();
-    stdin_thread.detach();
+    if (stdin_thread.joinable()) {
+        stdin_thread.join();
+    }
     return 0;
 }
 
@@ -75,12 +84,16 @@ int main(int argc, char *argv[]) {
             print_usage(argv[0]);
             return 1;
         }
-        std::string source = load_file(file);
-        if (source.empty()) {
+        midle::FileLoadResult loaded = midle::load_file(file);
+        if (loaded.status == midle::FileLoadStatus::NotFound) {
+            std::cerr << "Error: file not found: " << file << "\n";
+            return 1;
+        }
+        if (loaded.status == midle::FileLoadStatus::IOError) {
             std::cerr << "Error: cannot read " << file << "\n";
             return 1;
         }
-        return run_mode_exec(source);
+        return run_mode_exec(loaded.content);
     }
 
     try {

@@ -30,7 +30,7 @@ Requires: CMake ≥ 3.16, C++17 compiler, ncurses, python3 (for embed generation
 
 - **Editor** — full-screen window titled `mIDLE`, takes the whole terminal minus status bar
 - **Console** — floating popup (resizable, collapsible, closable), appears only when running or finished
-- **Status bar** — 1-line bottom bar with key hints (`Ctrl+R Run/Stop  Esc Exit`)
+- **Status bar** — 1-line bottom bar with key hints (`Ctrl+R Run/Stop  Ctrl+S Save  Esc Exit`)
 
 ### App state
 
@@ -44,7 +44,7 @@ Requires: CMake ≥ 3.16, C++17 compiler, ncurses, python3 (for embed generation
 
 Flow: `run` → `mp_running = true` → `done()` → if `!stop_requested` → `mp_finished = true` → key press → `mp_finished = false`. If `stop_requested` (Ctrl+R while running, or close button), skip `mp_finished` and dismiss immediately.
 
-Keys: `Ctrl+R` toggles run/stop, `Esc` exits.
+Keys: `Ctrl+R` toggles run/stop, `Ctrl+S` (or `Ctrl+W`) saves, `Esc` exits.
 
 ## Embed package generation
 
@@ -144,7 +144,10 @@ single-line windows like the status bar.
 
 ## CI
 
-Triggered by `v*` tags. Builds three platforms:
+**Pull requests / pushes to main:** `.github/workflows/ci.yml` — Linux build with
+`cmake --preset with-tests` and `ctest`.
+
+**Releases:** `.github/workflows/release.yml`, triggered by `v*` tags. Builds three platforms:
 
 - **macOS arm64** — native `macos-latest` runner
 - **Windows x64** — MinGW cross-compilation on Linux (`x86_64-w64-mingw32-g++`)

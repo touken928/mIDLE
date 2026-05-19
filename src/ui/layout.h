@@ -17,18 +17,12 @@ struct Theme {
     ImVec4 selected = ImVec4(0.18f, 0.28f, 0.46f, 1.f);
     ImVec4 hovered = ImVec4(0.19f, 0.20f, 0.28f, 1.f);
     ImVec4 accent = ImVec4(0.32f, 0.56f, 0.92f, 1.f);
-    ImVec4 run = ImVec4(0.18f, 0.42f, 0.26f, 1.f);
-    ImVec4 danger = ImVec4(0.54f, 0.20f, 0.22f, 1.f);
 };
 
 inline const Theme &GetTheme() {
     static const Theme theme;
     return theme;
 }
-
-constexpr int kNarrowColumns = 72;
-constexpr int kMinSidebarWidth = 22;
-constexpr int kMaxSidebarWidth = 30;
 
 } // namespace ui
 } // namespace midle
