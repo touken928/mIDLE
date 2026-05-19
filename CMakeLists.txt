@@ -1,61 +1,21 @@
 cmake_minimum_required(VERSION 3.16)
 project(mIDLE VERSION 0.1.0 LANGUAGES C CXX)
 
+# ── Language standards ──────────────────────────────────────
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# ═════════════════════════════════════════════════════════════
-# 1.  MicroPython embedding target  (micropy + mp_core)
-# ═════════════════════════════════════════════════════════════
-add_subdirectory(src/mpy)
+# ── Platform integration modules ────────────────────────────
+include(cmake/PDCurses.cmake)
+include(cmake/imtui-patch.cmake)
 
-# ═════════════════════════════════════════════════════════════
-# 2.  PDCurses (Windows console backend for ImTUI)
-# ═════════════════════════════════════════════════════════════
-if(MINGW)
-    file(GLOB PDCURSES_SOURCES
-        "${CMAKE_CURRENT_SOURCE_DIR}/third_party/pdcurses/pdcurses/*.c"
-        "${CMAKE_CURRENT_SOURCE_DIR}/third_party/pdcurses/wincon/*.c"
-    )
+# ── Targets ─────────────────────────────────────────────────
+add_subdirectory(src/mpy)           # mpy: MicroPython embed + HAL + C++ wrapper
+add_subdirectory(third_party/imtui)  # imtui-ncurses, imtui, imgui-for-imtui
 
-    add_library(pdcurses STATIC ${PDCURSES_SOURCES})
-    target_include_directories(pdcurses PUBLIC
-        "${CMAKE_CURRENT_SOURCE_DIR}/src/compat"
-        "${CMAKE_CURRENT_SOURCE_DIR}/third_party/pdcurses"
-    )
-    target_compile_definitions(pdcurses PUBLIC PDC_FORCE_UTF8)
-
-    set(CURSES_INCLUDE_DIR
-        "${CMAKE_CURRENT_SOURCE_DIR}/src/compat;${CMAKE_CURRENT_SOURCE_DIR}/third_party/pdcurses"
-        CACHE STRING "PDCurses include directories" FORCE
-    )
-endif()
-
-# ═════════════════════════════════════════════════════════════
-# 3.  ImTUI
-# ═════════════════════════════════════════════════════════════
-add_subdirectory(third_party/imtui)
-
-# Apply patch: use terminal default background for ANSI color 16 (pure black)
-set(_imtui_patch_file "${CMAKE_CURRENT_SOURCE_DIR}/third_party/imtui/src/imtui-impl-ncurses.cpp")
-set(_imtui_patch_marker "${CMAKE_CURRENT_BINARY_DIR}/.imtui_ncurses_patched")
-if(NOT EXISTS "${_imtui_patch_marker}")
-    file(READ "${_imtui_patch_file}" _imtui_contents)
-    string(REPLACE "init_pair(nColPairs, f, b);"
-        "short b_init = (b == 16) ? -1 : (short)b;\n                init_pair(nColPairs, f, b_init);"
-        _imtui_patched
-        "${_imtui_contents}"
-    )
-    file(WRITE "${_imtui_patch_file}" "${_imtui_patched}")
-    file(WRITE "${_imtui_patch_marker}" "")
-    message(STATUS "[imtui] patched ncurses renderer for terminal-default black background")
-endif()
-
-# ═════════════════════════════════════════════════════════════
-# 4.  mIDLE executable
-# ═════════════════════════════════════════════════════════════
+# ── midle executable ────────────────────────────────────────
 add_executable(midle
     src/main.cpp
     src/app.cpp
@@ -64,23 +24,26 @@ add_executable(midle
     src/ui/shell_panel.cpp
     "${CMAKE_CURRENT_SOURCE_DIR}/third_party/imtui/third-party/imgui/imgui/misc/cpp/imgui_stdlib.cpp"
 )
+
 target_link_libraries(midle PRIVATE
     mpy
     imtui-ncurses
 )
+
+target_include_directories(midle PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    "${CMAKE_CURRENT_SOURCE_DIR}/third_party/imtui/third-party/imgui/imgui"
+)
+
 if(NOT MINGW)
     target_link_libraries(midle PRIVATE m)
 endif()
 if(MINGW)
     target_link_options(midle PRIVATE -static)
 endif()
-target_include_directories(midle PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/src"
-    "${CMAKE_CURRENT_SOURCE_DIR}/third_party/imtui/third-party/imgui/imgui"
-)
 
-# ═════════════════════════════════════════════════════════════
-# 5.  Tests (Google Test)
-# ═════════════════════════════════════════════════════════════
-enable_testing()
-add_subdirectory(tests)
+# ── Tests ───────────────────────────────────────────────────
+if(BUILD_TESTING)
+    enable_testing()
+    add_subdirectory(tests)
+endif()

@@ -16,8 +16,7 @@
             "inherits": "default",
             "description": "Debug build with tests enabled",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "BUILD_TESTING": "ON"
+                "CMAKE_BUILD_TYPE": "Debug"
             }
         },
         {
@@ -31,67 +30,50 @@
         {
             "name": "windows-cross",
             "displayName": "Windows x64 (MinGW cross-compile)",
-            "description": "Cross-compile for Windows from Linux via MinGW",
+            "description": "Cross-compile for Windows from Linux via MinGW-w64",
             "binaryDir": "${sourceDir}/build-windows",
+            "toolchainFile": "${sourceDir}/toolchains/mingw-w64-x86_64.cmake",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_SYSTEM_NAME": "Windows",
-                "CMAKE_C_COMPILER": "x86_64-w64-mingw32-gcc",
-                "CMAKE_CXX_COMPILER": "x86_64-w64-mingw32-g++",
-                "CMAKE_FIND_ROOT_PATH": "/usr/x86_64-w64-mingw32",
-                "CMAKE_FIND_ROOT_PATH_MODE_PROGRAM": "NEVER",
-                "CMAKE_FIND_ROOT_PATH_MODE_LIBRARY": "ONLY",
-                "CMAKE_FIND_ROOT_PATH_MODE_INCLUDE": "ONLY"
-            },
-            "condition": {
-                "type": "notEquals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Windows"
+                "CMAKE_BUILD_TYPE": "Release"
             }
         },
         {
             "name": "linux-static",
-            "displayName": "Linux static musl",
-            "description": "Fully static musl build (Alpine container)",
+            "displayName": "Linux x64 fully-static (musl)",
+            "description": "Fully static build for Alpine/musl Linux",
             "binaryDir": "${sourceDir}/build-static",
+            "toolchainFile": "${sourceDir}/toolchains/linux-musl-static.cmake",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_EXE_LINKER_FLAGS": "-static"
+                "CMAKE_BUILD_TYPE": "Release"
             }
         }
     ],
     "buildPresets": [
         {
             "name": "default",
-            "configurePreset": "default",
-            "description": "Build with default preset"
+            "configurePreset": "default"
         },
         {
             "name": "dev",
-            "configurePreset": "dev",
-            "description": "Build debug with tests"
+            "configurePreset": "dev"
         },
         {
             "name": "with-tests",
-            "configurePreset": "with-tests",
-            "description": "Build release with tests"
+            "configurePreset": "with-tests"
         },
         {
             "name": "windows-cross",
-            "configurePreset": "windows-cross",
-            "description": "Build for Windows via cross-compile"
+            "configurePreset": "windows-cross"
         },
         {
             "name": "linux-static",
-            "configurePreset": "linux-static",
-            "description": "Build static musl Linux binary"
+            "configurePreset": "linux-static"
         }
     ],
     "testPresets": [
         {
             "name": "default",
             "configurePreset": "with-tests",
-            "description": "Run unit tests",
             "output": {
                 "outputOnFailure": true
             }

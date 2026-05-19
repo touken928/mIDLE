@@ -1,5 +1,5 @@
 build/
-build-embed/
+build-*/
 src/mpy/build-embed/
 .cache/
 *.o
