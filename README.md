@@ -1,6 +1,15 @@
-# mIDLE
+<h1 align="center">mIDLE</h1>
 
-A terminal Python IDE with embedded MicroPython runtime and ImTUI interface.
+<p align="center">
+  <strong>A terminal Python IDE with embedded MicroPython runtime and ImTUI interface.</strong>
+</p>
+
+<p align="center">
+  <a href="https://en.cppreference.com/w/cpp/17"><img src="https://img.shields.io/badge/c++-17-blue.svg?style=for-the-badge&logo=c%2B%2B" alt="C++17"></a>
+  <a href="https://cmake.org/"><img src="https://img.shields.io/badge/cmake-3.16+-064F8C.svg?style=for-the-badge&logo=cmake" alt="CMake 3.16+"></a>
+  <a href="https://github.com/touken928/mIDLE/actions/workflows/release.yml"><img src="https://img.shields.io/github/actions/workflow/status/touken928/mIDLE/release.yml?style=for-the-badge&logo=githubactions&label=CI" alt="CI"></a>
+  <a href="https://github.com/touken928/mIDLE/stargazers"><img src="https://img.shields.io/github/stars/touken928/mIDLE?style=for-the-badge&color=yellow&logo=github" alt="GitHub stars"></a>
+</p>
 
 ## Build
 

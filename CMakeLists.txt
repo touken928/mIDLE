@@ -78,3 +78,9 @@ target_include_directories(midle PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/third_party/imtui/third-party/imgui/imgui"
 )
+
+# ═════════════════════════════════════════════════════════════
+# 5.  Tests (Google Test)
+# ═════════════════════════════════════════════════════════════
+enable_testing()
+add_subdirectory(tests)

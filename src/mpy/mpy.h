@@ -29,5 +29,8 @@ void stop();
 // Execute synchronously and return captured stdout/stderr text.
 std::string exec(const std::string &source);
 
+// Clear the output buffer without reading it.
+void clear_output();
+
 } // namespace mpy
 } // namespace midle
