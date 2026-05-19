@@ -11,10 +11,27 @@
   <a href="https://github.com/touken928/mIDLE/stargazers"><img src="https://img.shields.io/github/stars/touken928/mIDLE?style=for-the-badge&color=yellow&logo=github" alt="GitHub stars"></a>
 </p>
 
-## Build
+<p align="center">
+  <img src="screenshots/run.png" alt="mIDLE screenshot" width="720">
+</p>
+
+Write and run Python code directly in your terminal. Built on MicroPython — no system Python required.
+
+## Features
+
+- **Full-screen editor** — write Python scripts in a native TUI text editor
+- **Built-in REPL** — run code and see output in a floating console popup
+- **`input()` support** — stdin field appears automatically when Python calls `input()`
+- **Keyboard interrupt** — stop runaway code with `Ctrl+R`
+- **Dark theme** — terminal-friendly, blends with default background
+
+## Quick start
+
+Download a prebuilt binary from [Releases](https://github.com/touken928/mIDLE/releases), or build from source:
 
 ```bash
 git clone --recurse-submodules https://github.com/touken928/mIDLE.git
+cd mIDLE
 cmake -B build
 make -C build -j
 ./build/midle
@@ -22,58 +39,12 @@ make -C build -j
 
 Requires CMake ≥ 3.16, a C++17 compiler, and ncurses.
 
-## Structure
+## Usage
 
-```
-mIDLE/
-├── CMakeLists.txt
-├── src/
-│   ├── main.cpp              # bootstrap
-│   ├── app.h / app.cpp       # lifecycle + responsive layout
-│   ├── mpy/                  # MicroPython embed target
-│   │   ├── CMakeLists.txt
-│   │   ├── mpconfigport.h    #   MicroPython port config
-│   │   ├── mpyhalport.h / .c #   HAL: stdout capture, stdin ring-buffer
-│   │   └── mpy.h / .cpp      #   C++ wrapper (midle::mpy)
-│   └── ui/
-│       ├── tui.h / .cpp        #   layout, theme, status bar
-│       ├── layout.h            #   dark theme + layout constants
-│       ├── editor_panel.h / .cpp
-│       └── shell_panel.h / .cpp
-└── third_party/
-    ├── imtui/                #   ggerganov/imtui
-    └── micropython/          #   micropython/micropython
-```
-
-### CMake targets
-
-```
-midle ──→ mpy  (single static lib: MicroPython embed + HAL + C++ wrapper)
-      ──→ imtui-ncurses → imtui → imgui-for-imtui
-```
-
-## API
-
-```cpp
-#include "mpy.h"
-
-midle::mpy::init(&stack_top);         // once, at startup
-midle::mpy::run_async(source);        // start Python in background thread
-midle::mpy::stop();                   // interrupt running code (KeyboardInterrupt)
-midle::mpy::input("hello\nworld");    // feed stdin (wakes blocked input())
-midle::mpy::close_stdin();            // signal EOF
-midle::mpy::take_output();            // poll captured stdout (thread-safe)
-midle::mpy::done();                   // execution finished?
-midle::mpy::exec(source);             // synchronous (no input support)
-midle::mpy::deinit();                 // shutdown
-```
-
-## Tips
-
-- **`input()` support:** `run_async()` runs Python in a background thread.
-  When `input()` is called, the thread blocks until `mpy::input()` feeds a line.
-  The shell panel shows a stdin input field while executing.
-
-- **Stop running code:** Press `Ctrl+R` while code is running
-  to inject a KeyboardInterrupt.
+| Key | Action |
+|-----|--------|
+| `Ctrl+R` | Run / Stop |
+| `Esc` | Exit |
+| `Tab` | Indent |
+| `Ctrl+S` | Save |
 
