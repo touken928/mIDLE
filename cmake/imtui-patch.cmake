@@ -1,18 +1,17 @@
-# Patch imtui-impl-ncurses.cpp so that ANSI color 16 (pure black)
-# uses the terminal's default background color (-1) instead.
-# This makes windows like the editor blend with the terminal.
+# Patched copy in build/generated only — third_party is never modified.
 
-set(_patch_file "${CMAKE_CURRENT_SOURCE_DIR}/third_party/imtui/src/imtui-impl-ncurses.cpp")
-set(_patch_marker "${CMAKE_CURRENT_BINARY_DIR}/.imtui_ncurses_patched")
+set(_src "${CMAKE_CURRENT_SOURCE_DIR}/third_party/imtui/src/imtui-impl-ncurses.cpp")
+set(_out "${CMAKE_CURRENT_BINARY_DIR}/generated/imtui-impl-ncurses.cpp")
 
-if(NOT EXISTS "${_patch_marker}")
-    file(READ "${_patch_file}" _contents)
-    string(REPLACE "init_pair(nColPairs, f, b);"
-        "short b_init = (b == 16) ? -1 : (short)b;\n                init_pair(nColPairs, f, b_init);"
-        _patched
-        "${_contents}"
-    )
-    file(WRITE "${_patch_file}" "${_patched}")
-    file(WRITE "${_patch_marker}" "")
-    message(STATUS "[imtui] patched ncurses renderer for terminal-default black background")
-endif()
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated")
+file(READ "${_src}" _contents)
+string(REPLACE
+    "init_pair(nColPairs, f, b);"
+    "short b_init = (b == 16) ? -1 : (short)b;\n                init_pair(nColPairs, f, b_init);"
+    _patched
+    "${_contents}"
+)
+file(WRITE "${_out}" "${_patched}")
+set(IMTUI_NCURSES_PATCHED_CPP "${_out}" CACHE INTERNAL "")
+
+message(STATUS "[imtui] patched ncurses renderer: ${IMTUI_NCURSES_PATCHED_CPP}")

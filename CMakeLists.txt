@@ -13,7 +13,10 @@ include(cmake/imtui-patch.cmake)
 
 # ── Targets ─────────────────────────────────────────────────
 add_subdirectory(src/mpy)           # mpy: MicroPython embed + HAL + C++ wrapper
-add_subdirectory(third_party/imtui)  # imtui-ncurses, imtui, imgui-for-imtui
+set(IMTUI_SUPPORT_NCURSES OFF CACHE BOOL "midle supplies patched imtui-ncurses" FORCE)
+add_subdirectory(third_party/imtui)  # imtui, imgui-for-imtui
+include(cmake/imtui-ncurses.cmake)
+midle_add_imtui_ncurses()
 
 # ── midle executable ────────────────────────────────────────
 add_executable(midle
@@ -21,6 +24,9 @@ add_executable(midle
     src/app.cpp
     src/io/file_io.cpp
     src/ui/tui.cpp
+    src/highlight/ansi_colors.cpp
+    src/highlight/py_tokenizer.cpp
+    src/highlight/screen.cpp
     src/ui/editor_panel.cpp
     src/ui/shell_panel.cpp
     "${CMAKE_CURRENT_SOURCE_DIR}/third_party/imtui/third-party/imgui/imgui/misc/cpp/imgui_stdlib.cpp"
@@ -33,6 +39,7 @@ target_link_libraries(midle PRIVATE
 
 target_include_directories(midle PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    "${CMAKE_CURRENT_SOURCE_DIR}/third_party/imtui/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/third_party/imtui/third-party/imgui/imgui"
 )
 

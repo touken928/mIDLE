@@ -1,5 +1,6 @@
 #include "app.h"
 
+#include "highlight/screen.h"
 #include "io/file_io.h"
 #include "mpy/mpy.h"
 #include "ui/tui.h"
@@ -159,6 +160,7 @@ void app_frame(App &app) {
 
     ImGui::Render();
     ImTui_ImplText_RenderDrawData(ImGui::GetDrawData(), g_screen);
+    highlight::ApplyPythonEditorHighlight(g_screen);
     ImTui_ImplNcurses_DrawScreen(true);
 }
 

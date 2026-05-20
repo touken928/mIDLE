@@ -42,14 +42,14 @@ void RenderEditorWindow(App &app, int x, int y, int width, int height) {
     ImGui::SetNextWindowSize(ImVec2(static_cast<float>(width), static_cast<float>(height)), ImGuiCond_Always);
 
     std::string title = app.file_path.empty() ? "mIDLE" : "mIDLE - " + app.file_path;
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, theme.main);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, theme.field);
     ImGui::Begin(title.c_str(), nullptr,
         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
-    ImGui::PopStyleColor();
 
     const int panel_h = static_cast<int>(ImGui::GetContentRegionAvail().y);
     RenderEditorPanel(app, std::max(width - 2, 8), std::max(panel_h, 4));
     ImGui::End();
+    ImGui::PopStyleColor();
 }
 
 void RenderConsolePopup(App &app, TuiActions &actions, int screen_w, int screen_h) {
@@ -122,8 +122,8 @@ void ApplyTheme() {
 
     style.Colors[ImGuiCol_Text] = theme.text;
     style.Colors[ImGuiCol_TextDisabled] = theme.muted;
-    style.Colors[ImGuiCol_WindowBg] = theme.main;
-    style.Colors[ImGuiCol_ChildBg] = theme.panel;
+    style.Colors[ImGuiCol_WindowBg] = theme.field;
+    style.Colors[ImGuiCol_ChildBg] = theme.field;
     style.Colors[ImGuiCol_PopupBg] = ImVec4(0.04f, 0.04f, 0.06f, 1.f);
     style.Colors[ImGuiCol_Border] = ImVec4(0.24f, 0.24f, 0.31f, 1.f);
     style.Colors[ImGuiCol_FrameBg] = theme.field;
