@@ -19,11 +19,12 @@ Write and run Python code directly in your terminal. Built on MicroPython — no
 
 ## Features
 
-- **Full-screen editor** — write Python scripts in a native TUI text editor
+- **Full-screen editor** — write Python scripts in a native TUI text editor with cursor, mouse, and scroll
+- **Python syntax highlighting** — keywords, strings, comments, numbers, builtins, and decorators colored in the editor
 - **Built-in REPL** — run code and see output in a floating console popup
 - **`input()` support** — stdin field appears automatically when Python calls `input()`
 - **Keyboard interrupt** — stop runaway code with `Ctrl+R`
-- **Dark theme** — terminal-friendly, blends with default background
+- **Dark theme** — solid, readable colors tuned for the terminal
 
 ## Quick start
 
