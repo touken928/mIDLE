@@ -156,7 +156,7 @@ TuiActions RenderWorkspace(App &app) {
             actions.run = true;
         }
     }
-    if (NcursesCtrlPressed(kNcursesCtrlS) || NcursesCtrlPressed(kNcursesCtrlW)) {
+    if (NcursesCtrlPressed(kNcursesCtrlS)) {
         actions.save = true;
     }
     if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape))) {

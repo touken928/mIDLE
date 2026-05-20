@@ -44,7 +44,7 @@ Requires: CMake ≥ 3.16, C++17 compiler, ncurses, python3 (for embed generation
 
 Flow: `run` → `mp_running = true` → `done()` → if `!stop_requested` → `mp_finished = true` → key press → `mp_finished = false`. If `stop_requested` (Ctrl+R while running, or close button), skip `mp_finished` and dismiss immediately.
 
-Keys: `Ctrl+R` toggles run/stop, `Ctrl+S` (or `Ctrl+W`) saves, `Esc` exits.
+Keys: `Ctrl+R` toggles run/stop, `Ctrl+S` saves (requires `midle <file>`), `Esc` exits.
 
 ## Embed package generation
 

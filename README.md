@@ -46,9 +46,17 @@ Requires CMake ≥ 3.16, a C++17 compiler, and ncurses.
 
 ## Usage
 
+```bash
+./build/midle                 # open the built-in sample script
+./build/midle script.py       # open a file in the editor
+./build/midle --run script.py # run a script and print output, then exit
+```
+
+`Ctrl+S` saves only when mIDLE was started with a file path.
+
 | Key | Action |
 |-----|--------|
 | `Ctrl+R` | Run / Stop |
+| `Ctrl+S` | Save (when a file was opened) |
 | `Esc` | Exit |
 | `Tab` | Indent |
-| `Ctrl+S` | Save (`Ctrl+W` also works) |
