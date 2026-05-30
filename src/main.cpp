@@ -16,13 +16,14 @@
 #endif
 
 static void print_usage(const char *prog) {
-    std::cerr << "Usage: " << prog << " [--py | --js] [--run] <file>\n"
+    std::cerr << "Usage: " << prog << " [--py | --js | --lua] [--run] <file>\n"
               << "  --py     start in Python mode (default)\n"
               << "  --js     start in JavaScript mode\n"
+              << "  --lua    start in Lua mode\n"
               << "  --run    execute script and print output, then exit\n"
               << "  <file>   open file in the editor (default: interactive mode)\n"
               << "\n"
-              << "Language is chosen from the file extension unless --py or --js is given.\n";
+              << "Language is chosen from the file extension unless --py, --js, or --lua is given.\n";
 }
 
 static int run_mode_exec(const std::string &source, midle::runtime::LanguageId language) {
@@ -97,7 +98,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (cli_language_flags > 1) {
-        std::cerr << "Error: only one language flag (--py / --js) may be used\n";
+        std::cerr << "Error: only one language flag (--py / --js / --lua) may be used\n";
         print_usage(argv[0]);
         return 1;
     }

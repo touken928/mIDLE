@@ -14,6 +14,7 @@ namespace runtime {
 enum class LanguageId {
     Python,
     JavaScript,
+    Lua,
 };
 
 struct LanguageModule {

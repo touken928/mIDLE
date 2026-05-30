@@ -1,7 +1,7 @@
 <h1 align="center">mIDLE</h1>
 
 <p align="center">
-  <strong>A terminal IDE for Python and JavaScript with embedded runtimes and an ImTUI interface.</strong>
+  <strong>A terminal IDE for Python, JavaScript, and Lua with embedded runtimes and an ImTUI interface.</strong>
 </p>
 
 <p align="center">
@@ -15,16 +15,16 @@
   <img src="screenshots/run.png" alt="mIDLE screenshot" width="720">
 </p>
 
-Write and run Python or JavaScript directly in your terminal. Python uses embedded MicroPython; JavaScript uses QuickJS — no system Python or Node.js required.
+Write and run Python, JavaScript, or Lua directly in your terminal. Python uses embedded MicroPython; JavaScript uses QuickJS; Lua uses upstream PUC-Rio Lua — no system interpreters required.
 
 ## Features
 
 - **Full-screen editor** — write scripts in a native TUI text editor with cursor, mouse, and scroll
-- **Syntax highlighting** — Python and JavaScript keywords, strings, comments, and more
+- **Syntax highlighting** — Python, JavaScript, and Lua keywords, strings, comments, and more
 - **Built-in console** — run code and see output in a floating popup
 - **Interactive input** — Python `input()` and JavaScript `prompt()` are wired to the console stdin field
 - **Keyboard interrupt** — stop runaway code with `Ctrl+R`
-- **Multi-language** — open `.py` / `.js` files or pick a language with `--py` / `--js`
+- **Multi-language** — open `.py` / `.js` / `.lua` files or pick a language with `--py` / `--js` / `--lua`
 - **Dark theme** — solid, readable colors tuned for the terminal
 
 ## Quick start
@@ -51,12 +51,14 @@ Requires CMake ≥ 3.16, a C++17 compiler, ncurses, and python3 (for MicroPython
 ./build/midle                    # open the default sample (Python)
 ./build/midle script.py          # open a Python file
 ./build/midle script.js          # open a JavaScript file
+./build/midle script.lua         # open a Lua file
 ./build/midle --js               # start in JavaScript mode (default sample)
+./build/midle --lua              # start in Lua mode (default sample)
 ./build/midle --py script.js     # force Python mode for a .js file
 ./build/midle --run script.py    # run a script and print output, then exit
 ```
 
-Language is chosen from the file extension (`.py`, `.pyw`, `.js`, `.mjs`) unless `--py` or `--js` is given. Default is Python.
+Language is chosen from the file extension (`.py`, `.pyw`, `.js`, `.mjs`, `.lua`) unless `--py`, `--js`, or `--lua` is given. Default is Python.
 
 `Ctrl+S` saves only when mIDLE was started with a file path.
 
@@ -73,8 +75,9 @@ Language is chosen from the file extension (`.py`, `.pyw`, `.js`, `.mjs`) unless
 |----------|--------|-------|
 | Python | `print(...)` | `input('prompt')` |
 | JavaScript | `print(...)` | `prompt('prompt')` |
+| Lua | `print(...)` | `prompt('prompt')` |
 
-JavaScript uses host-provided `print` / `prompt` globals — not `console.log` or Node.js APIs.
+JavaScript and Lua use host-provided `print` / `prompt` globals — not `console.log`, Node.js, or `io.read()`.
 
 ## Development
 

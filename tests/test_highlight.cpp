@@ -1,4 +1,5 @@
 #include "languages/javascript/highlight/tokenizer.h"
+#include "languages/lua/highlight/tokenizer.h"
 #include "languages/python/highlight/tokenizer.h"
 
 #include <gtest/gtest.h>
@@ -13,6 +14,12 @@ TEST(HighlightTest, PythonComment) {
 
 TEST(HighlightTest, JavaScriptLineComment) {
     const auto spans = languages::javascript::highlight::tokenize_line("// comment");
+    ASSERT_EQ(spans.size(), 1u);
+    EXPECT_EQ(spans[0].kind, highlight::TokenKind::Comment);
+}
+
+TEST(HighlightTest, LuaLineComment) {
+    const auto spans = languages::lua::highlight::tokenize_line("-- comment");
     ASSERT_EQ(spans.size(), 1u);
     EXPECT_EQ(spans[0].kind, highlight::TokenKind::Comment);
 }

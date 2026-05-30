@@ -10,5 +10,8 @@ const runtime::LanguageModule &language_module();
 namespace javascript {
 const runtime::LanguageModule &language_module();
 }
+namespace lua {
+const runtime::LanguageModule &language_module();
+}
 } // namespace languages
 } // namespace midle

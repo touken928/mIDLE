@@ -11,6 +11,7 @@ void register_builtin_languages() {
     }
     register_language(languages::python::language_module());
     register_language(languages::javascript::language_module());
+    register_language(languages::lua::language_module());
     registered = true;
 }
 

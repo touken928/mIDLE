@@ -48,7 +48,9 @@ src/
   languages/
     python/                # MicroPython backend + config + HAL + highlight
     javascript/            # QuickJS backend + vendor wrapper + highlight
+    lua/                   # Lua backend + vendor wrapper + highlight
     register.h             # language_module() declarations
+    register.cpp           # register_builtin_languages()
 ```
 
 ### CMake targets
@@ -59,7 +61,10 @@ src/
 | `midle_lang_python` | MicroPython embed + HAL + backend | `src/languages/python/` |
 | `midle_quickjs_core` | QuickJS C sources (static lib) | `third_party/quickjs/` |
 | `midle_lang_javascript` | QuickJS backend + highlight | `src/languages/javascript/` |
-| `midle_runtime` | INTERFACE — links all of the above | `CMakeLists.txt` |
+| `midle_lua_core` | Lua C sources (static lib) | `third_party/lua/` |
+| `midle_lang_lua` | Lua backend + highlight | `src/languages/lua/` |
+| `midle_language_registry` | builtin language registration | `src/languages/register.cpp` |
+| `midle_runtime` | INTERFACE — links core + registry | `CMakeLists.txt` |
 | `imtui-ncurses` | terminal UI backend | `third_party/imtui` |
 | `midle` | application executable | `src/{app,main,io,ui,highlight}/` |
 
@@ -74,7 +79,7 @@ Each language implements `runtime::ScriptEngine` and registers a
 struct LanguageModule {
     LanguageId id;
     const char *display_name;
-    const char *cli_flag;              // e.g. "--py", "--js"
+    const char *cli_flag;              // e.g. "--py", "--js", "--lua"
     const char *const *file_extensions; // null-terminated list
     const char *default_sample;
     const char *ready_status;
@@ -88,11 +93,12 @@ Adding a language:
 1. Create `src/languages/<name>/` with `backend.cpp` (`ScriptEngine` subclass),
    `module.cpp` (`LanguageModule`), and `highlight/tokenizer.cpp`.
 2. Export `language_module()` and register it in
-   `register_builtin_languages()` (`src/runtime/core/registry.cpp`).
-3. Add a CMake target and link it into `midle_runtime` (`CMakeLists.txt`).
+   `register_builtin_languages()` (`src/languages/register.cpp`).
+3. Add a CMake target and link it into `midle_language_registry`
+   (`src/languages/CMakeLists.txt`).
 
-Language selection: file extension (`.py`, `.js`, `.mjs`) or CLI flags `--py` /
-`--js`. Default is Python when no extension matches.
+Language selection: file extension (`.py`, `.js`, `.mjs`, `.lua`) or CLI flags
+`--py` / `--js` / `--lua`. Default is Python when no extension matches.
 
 ### UI layout
 
@@ -174,6 +180,17 @@ Key details:
 - Host I/O bindings (not Node.js): global `print(...)` and `prompt(msg)`.
   There is no `console.log` or `input()`.
 
+## Lua (Lua backend)
+
+- Lua sources live in `third_party/lua/` (`midle_lua_core` target).
+- C++ code includes Lua via `vendor/lua_inc.h` with a relative path — do not add
+  the Lua directory to C++ include paths.
+- Standard libraries are opened via `luaL_openlibs`; host globals override
+  `print` and add `prompt`.
+- Stop uses `lua_sethook` with `LUA_MASKCOUNT` plus Ctrl+C on stdin to wake
+  blocked reads.
+- Host I/O: global `print(...)` (tab-separated) and `prompt(msg)`.
+
 ## Script I/O model
 
 Shared by all languages via `runtime/core/script_io.c`:
@@ -245,6 +262,7 @@ Built with `cmake --preset with-tests`:
 |------|------|
 | `test_python_backend` | MicroPython exec, I/O, stop |
 | `test_javascript_backend` | QuickJS exec, print/prompt, stop |
+| `test_lua_backend` | Lua exec, print/prompt, stop |
 | `test_runtime` | language registry, resolve, facade |
 | `test_highlight` | per-language tokenizers |
 

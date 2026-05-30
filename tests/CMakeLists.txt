@@ -18,7 +18,12 @@ target_link_libraries(test_runtime PRIVATE midle_runtime gtest_main)
 target_include_directories(test_runtime PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../src")
 add_test(NAME test_runtime COMMAND test_runtime)
 
+add_executable(test_lua_backend test_lua_backend.cpp)
+target_link_libraries(test_lua_backend PRIVATE midle_lang_lua gtest_main)
+target_include_directories(test_lua_backend PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../src")
+add_test(NAME test_lua_backend COMMAND test_lua_backend)
+
 add_executable(test_highlight test_highlight.cpp)
-target_link_libraries(test_highlight PRIVATE midle_lang_python midle_lang_javascript gtest_main)
+target_link_libraries(test_highlight PRIVATE midle_lang_python midle_lang_javascript midle_lang_lua gtest_main)
 target_include_directories(test_highlight PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../src")
 add_test(NAME test_highlight COMMAND test_highlight)

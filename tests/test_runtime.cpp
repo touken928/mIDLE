@@ -9,6 +9,7 @@ using namespace midle;
 TEST(RuntimeTest, LanguageFromPath) {
     EXPECT_EQ(runtime::language_from_path("script.py"), runtime::LanguageId::Python);
     EXPECT_EQ(runtime::language_from_path("app.js"), runtime::LanguageId::JavaScript);
+    EXPECT_EQ(runtime::language_from_path("main.lua"), runtime::LanguageId::Lua);
     EXPECT_EQ(runtime::language_from_path(""), runtime::LanguageId::Python);
 }
 
