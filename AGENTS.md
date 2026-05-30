@@ -252,7 +252,7 @@ Built with `cmake --preset with-tests`:
 
 **Pull requests / pushes to main:** `.github/workflows/ci.yml` — Alpine 3.20
 container, musl fully-static build (`linux-static-with-tests` preset),
-`readelf`/`ldd` static dependency check, and `ctest`.
+`readelf` static dependency check, and `ctest`.
 
 **Releases:** `.github/workflows/release.yml`, triggered by `v*` tags. Builds three platforms:
 
