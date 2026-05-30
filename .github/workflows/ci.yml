@@ -8,19 +8,55 @@ on:
 jobs:
   linux:
     runs-on: ubuntu-latest
+    container:
+      image: alpine:3.20
+      options: --user root
     steps:
+      - run: apk add --no-cache git
       - uses: actions/checkout@v4
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake g++ python3 libncurses-dev
-      - name: Init submodules
+          apk add --no-cache \
+            cmake \
+            make \
+            g++ \
+            python3 \
+            ncurses-dev \
+            ncurses-static \
+            binutils
+      - run: git config --global safe.directory '*'
+      - name: Init submodules and force static ncurses
         run: |
+          rm -f /usr/lib/libncurses.so /usr/lib/libncursesw.so \
+                /usr/lib/libtinfo.so /usr/lib/libtinfow.so \
+                /usr/lib/libform.so /usr/lib/libformw.so \
+                /usr/lib/libpanel.so /usr/lib/libpanelw.so \
+                /usr/lib/libmenu.so /usr/lib/libmenuw.so
           git submodule update --init
           git submodule update --init --recursive third_party/imtui
       - name: Configure
-        run: cmake --preset with-tests
+        run: cmake --preset linux-static-with-tests
       - name: Build
-        run: cmake --build --preset with-tests -j$(nproc)
+        run: cmake --build --preset linux-static-with-tests -j$(nproc)
+      - name: Verify fully static binaries
+        run: |
+          set -eu
+          for bin in \
+            build-static/midle \
+            build-static/tests/test_runtime \
+            build-static/tests/test_python_backend \
+            build-static/tests/test_javascript_backend
+          do
+            if readelf -d "$bin" | grep -q NEEDED; then
+              echo "FAIL: $bin has dynamic dependencies:" >&2
+              readelf -d "$bin" | grep NEEDED >&2
+              exit 1
+            fi
+            ldd_out=$(ldd "$bin" 2>&1 || true)
+            case "$ldd_out" in
+              *"Not a valid dynamic executable"*) echo "OK: $bin" ;;
+              *) echo "FAIL: $bin: $ldd_out" >&2; exit 1 ;;
+            esac
+          done
       - name: Test
-        run: ctest --preset default
+        run: ctest --preset linux-static --test-dir build-static

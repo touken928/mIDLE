@@ -15,8 +15,7 @@ add_subdirectory(src/languages)
 add_library(midle_runtime INTERFACE)
 target_link_libraries(midle_runtime INTERFACE
     midle_runtime_core
-    midle_lang_python
-    midle_lang_javascript
+    midle_language_registry
 )
 target_include_directories(midle_runtime INTERFACE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"

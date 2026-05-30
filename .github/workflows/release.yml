@@ -56,7 +56,8 @@ jobs:
             g++ \
             python3 \
             ncurses-dev \
-            ncurses-static
+            ncurses-static \
+            binutils
       - run: git config --global safe.directory '*'
       - run: |
           rm -f /usr/lib/libncurses.so /usr/lib/libncursesw.so \
@@ -68,6 +69,20 @@ jobs:
           git submodule update --init --recursive third_party/imtui
       - run: cmake --preset linux-static
       - run: cmake --build --preset linux-static -j$(nproc)
+      - name: Verify fully static binary
+        run: |
+          set -eu
+          bin=build-static/midle
+          if readelf -d "$bin" | grep -q NEEDED; then
+            echo "FAIL: $bin has dynamic dependencies:" >&2
+            readelf -d "$bin" | grep NEEDED >&2
+            exit 1
+          fi
+          ldd_out=$(ldd "$bin" 2>&1 || true)
+          case "$ldd_out" in
+            *"Not a valid dynamic executable"*) echo "OK: $bin" ;;
+            *) echo "FAIL: $bin: $ldd_out" >&2; exit 1 ;;
+          esac
       - run: cp build-static/midle midle-linux-x64
       - uses: actions/upload-artifact@v4
         with:

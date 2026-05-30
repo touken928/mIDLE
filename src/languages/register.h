@@ -1,5 +1,7 @@
 #pragma once
 
+#include "runtime/core/language.h"
+
 namespace midle {
 namespace languages {
 namespace python {

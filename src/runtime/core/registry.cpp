@@ -1,7 +1,5 @@
 #include "language.h"
 
-#include "languages/register.h"
-
 #include <algorithm>
 #include <cctype>
 #include <memory>
@@ -78,16 +76,6 @@ const LanguageModule *find_language_by_cli_flag(const char *flag) {
 
 const LanguageModule *default_language() {
     return find_language(LanguageId::Python);
-}
-
-void register_builtin_languages() {
-    static bool registered = false;
-    if (registered) {
-        return;
-    }
-    register_language(languages::python::language_module());
-    register_language(languages::javascript::language_module());
-    registered = true;
 }
 
 LanguageId language_from_path(const std::string &path) {

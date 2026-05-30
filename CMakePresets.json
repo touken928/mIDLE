@@ -46,6 +46,14 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }
+        },
+        {
+            "name": "linux-static-with-tests",
+            "displayName": "Linux static musl with tests",
+            "inherits": "linux-static",
+            "cacheVariables": {
+                "BUILD_TESTING": "ON"
+            }
         }
     ],
     "buildPresets": [
@@ -68,12 +76,23 @@
         {
             "name": "linux-static",
             "configurePreset": "linux-static"
+        },
+        {
+            "name": "linux-static-with-tests",
+            "configurePreset": "linux-static-with-tests"
         }
     ],
     "testPresets": [
         {
             "name": "default",
             "configurePreset": "with-tests",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "linux-static",
+            "configurePreset": "linux-static-with-tests",
             "output": {
                 "outputOnFailure": true
             }
