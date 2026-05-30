@@ -6,7 +6,7 @@
 namespace midle {
 namespace highlight {
 
-enum class PyTokenKind {
+enum class TokenKind {
     Default,
     Comment,
     String,
@@ -19,10 +19,8 @@ enum class PyTokenKind {
 struct TokenSpan {
     int start = 0;
     int end = 0;
-    PyTokenKind kind = PyTokenKind::Default;
+    TokenKind kind = TokenKind::Default;
 };
-
-std::vector<TokenSpan> tokenize_line(std::string_view line);
 
 } // namespace highlight
 } // namespace midle

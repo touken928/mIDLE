@@ -26,21 +26,21 @@ ImTui::TColor rgb_to_ansi256(int r, int g, int b) {
 
 } // namespace
 
-ImTui::TColor ansi_color_for(PyTokenKind kind) {
+ImTui::TColor ansi_color_for(TokenKind kind) {
     switch (kind) {
-    case PyTokenKind::Comment:
+    case TokenKind::Comment:
         return rgb_to_ansi256(122, 133, 153);
-    case PyTokenKind::String:
+    case TokenKind::String:
         return rgb_to_ansi256(140, 199, 115);
-    case PyTokenKind::Number:
+    case TokenKind::Number:
         return rgb_to_ansi256(217, 166, 102);
-    case PyTokenKind::Keyword:
+    case TokenKind::Keyword:
         return rgb_to_ansi256(82, 143, 235);
-    case PyTokenKind::Builtin:
+    case TokenKind::Builtin:
         return rgb_to_ansi256(158, 204, 255);
-    case PyTokenKind::Decorator:
+    case TokenKind::Decorator:
         return rgb_to_ansi256(201, 164, 255);
-    case PyTokenKind::Default:
+    case TokenKind::Default:
     default:
         return 0;
     }

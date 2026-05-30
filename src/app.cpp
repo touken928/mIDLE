@@ -2,7 +2,7 @@
 
 #include "highlight/screen.h"
 #include "io/file_io.h"
-#include "mpy/mpy.h"
+#include "runtime/runtime.h"
 #include "ui/tui.h"
 
 #include "imtui/imtui-impl-ncurses.h"
@@ -20,7 +20,7 @@ namespace {
 ImTui::TScreen *g_screen = nullptr;
 
 void append_output(App &app) {
-    std::string out = mpy::take_output();
+    std::string out = runtime::take_output();
     if (!out.empty()) {
         append_shell_text(app.shell_text, out);
         app.scroll_shell = true;
@@ -37,13 +37,12 @@ void append_shell_text(std::string &shell, const std::string &chunk) {
     }
 }
 
-void app_init(App &app, const char *file_path) {
+void app_init(App &app, const char *file_path, runtime::LanguageId language) {
     ImGui::CreateContext();
     g_screen = ImTui_ImplNcurses_Init(true);
     ImTui_ImplText_Init();
 
 #ifdef __unix__
-    // Disable XON/XOFF flow control so Ctrl+S reaches ncurses
     struct termios t;
     tcgetattr(STDIN_FILENO, &t);
     t.c_iflag &= ~(IXON | IXOFF);
@@ -54,7 +53,10 @@ void app_init(App &app, const char *file_path) {
     io.IniFilename = nullptr;
 
     int stack_top = 0;
-    mpy::init(&stack_top);
+    runtime::init(&stack_top, language);
+
+    runtime::register_builtin_languages();
+    const runtime::LanguageModule *module = runtime::find_language(language);
 
     if (file_path && file_path[0]) {
         app.file_path = file_path;
@@ -75,19 +77,16 @@ void app_init(App &app, const char *file_path) {
             app.status_text = std::string("Cannot read ") + file_path;
             break;
         }
-    } else {
-        app.editor_text =
-            "# Welcome to mIDLE\n"
-            "name = input('Your name: ')\n"
-            "print('Hello,', name)\n";
-        app.status_text = "Ready";
+    } else if (module && module->default_sample) {
+        app.editor_text = module->default_sample;
+        app.status_text = module->ready_status ? module->ready_status : "Ready";
     }
     app.shell_text.clear();
 }
 
 void app_shutdown(App &) {
-    mpy::close_stdin();
-    mpy::deinit();
+    runtime::close_stdin();
+    runtime::deinit();
     ImTui_ImplText_Shutdown();
     ImTui_ImplNcurses_Shutdown();
     ImGui::DestroyContext();
@@ -100,14 +99,14 @@ void app_frame(App &app) {
 
     ui::ApplyTheme();
 
-    if (app.mp_running) {
+    if (app.executing) {
         append_output(app);
-        if (mpy::done()) {
+        if (runtime::done()) {
             append_output(app);
             app.scroll_shell = true;
-            app.mp_running = false;
+            app.executing = false;
             if (!app.stop_requested) {
-                app.mp_finished = true;
+                app.run_finished = true;
             }
             app.stop_requested = false;
         }
@@ -115,29 +114,29 @@ void app_frame(App &app) {
 
     ui::TuiActions actions = ui::RenderWorkspace(app);
 
-    if (actions.feed_stdin && app.mp_running) {
+    if (actions.feed_stdin && app.executing) {
         append_shell_text(app.shell_text, app.stdin_text + "\n");
-        mpy::input(app.stdin_text);
+        runtime::input(app.stdin_text);
         app.stdin_text.clear();
         app.scroll_shell = true;
         app.focus_stdin = true;
         app.status_text = "Input sent";
     }
 
-    if (actions.run && !app.mp_running) {
+    if (actions.run && !app.executing) {
         app.shell_text.clear();
         app.stdin_text.clear();
-        app.mp_finished = false;
+        app.run_finished = false;
         app.stop_requested = false;
-        mpy::run_async(app.editor_text);
-        app.mp_running = true;
+        runtime::run_async(app.editor_text);
+        app.executing = true;
         app.focus_stdin = true;
-        app.status_text = "Running";
+        app.status_text = std::string("Running (") + runtime::language_name(runtime::active_language()) + ")";
     }
 
-    if (actions.stop && app.mp_running) {
+    if (actions.stop && app.executing) {
         app.stop_requested = true;
-        mpy::stop();
+        runtime::stop();
         app.status_text = "Stopping";
     }
 
@@ -146,7 +145,7 @@ void app_frame(App &app) {
     }
 
     if (actions.dismiss_console) {
-        app.mp_finished = false;
+        app.run_finished = false;
     }
 
     if (actions.save) {
@@ -160,7 +159,7 @@ void app_frame(App &app) {
 
     ImGui::Render();
     ImTui_ImplText_RenderDrawData(ImGui::GetDrawData(), g_screen);
-    highlight::ApplyPythonEditorHighlight(g_screen);
+    highlight::ApplyEditorHighlight(g_screen, runtime::active_language());
     ImTui_ImplNcurses_DrawScreen(true);
 }
 

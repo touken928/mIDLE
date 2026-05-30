@@ -1,8 +1,7 @@
 #include "port/mpconfigport_common.h"
 
 #undef MICROPY_MPHALPORT_H
-// src/ must be in the include path so "mphalport.h" resolves to src/mphalport.h
-#define MICROPY_MPHALPORT_H "mpyhalport.h"
+#define MICROPY_MPHALPORT_H "../hal/port.h"
 
 #define MICROPY_CONFIG_ROM_LEVEL          (MICROPY_CONFIG_ROM_LEVEL_CORE_FEATURES)
 #define MICROPY_ENABLE_COMPILER           (1)
@@ -25,6 +24,6 @@
 #define MICROPY_ENABLE_EXTERNAL_IMPORT    (0)
 #define MICROPY_PY_IO                     (1)
 
-#define mp_hal_readline                   mpy_hal_readline
+#define mp_hal_readline                   port_readline
 
 #define MICROPY_PY_SYS_PLATFORM           "mIDLE"

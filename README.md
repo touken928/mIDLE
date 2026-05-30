@@ -1,7 +1,7 @@
 <h1 align="center">mIDLE</h1>
 
 <p align="center">
-  <strong>A terminal Python IDE with embedded MicroPython runtime and ImTUI interface.</strong>
+  <strong>A terminal IDE for Python and JavaScript with embedded runtimes and an ImTUI interface.</strong>
 </p>
 
 <p align="center">
@@ -15,15 +15,16 @@
   <img src="screenshots/run.png" alt="mIDLE screenshot" width="720">
 </p>
 
-Write and run Python code directly in your terminal. Built on MicroPython — no system Python required.
+Write and run Python or JavaScript directly in your terminal. Python uses embedded MicroPython; JavaScript uses QuickJS — no system Python or Node.js required.
 
 ## Features
 
-- **Full-screen editor** — write Python scripts in a native TUI text editor with cursor, mouse, and scroll
-- **Python syntax highlighting** — keywords, strings, comments, numbers, builtins, and decorators colored in the editor
-- **Built-in REPL** — run code and see output in a floating console popup
-- **`input()` support** — stdin field appears automatically when Python calls `input()`
+- **Full-screen editor** — write scripts in a native TUI text editor with cursor, mouse, and scroll
+- **Syntax highlighting** — Python and JavaScript keywords, strings, comments, and more
+- **Built-in console** — run code and see output in a floating popup
+- **Interactive input** — Python `input()` and JavaScript `prompt()` are wired to the console stdin field
 - **Keyboard interrupt** — stop runaway code with `Ctrl+R`
+- **Multi-language** — open `.py` / `.js` files or pick a language with `--py` / `--js`
 - **Dark theme** — solid, readable colors tuned for the terminal
 
 ## Quick start
@@ -42,15 +43,20 @@ cmake --build --preset default -j
 
 Do **not** use `git clone --recurse-submodules`: the MicroPython submodule has many nested submodules that are not needed and may fail to fetch. Initialize only `imtui` recursively (and `pdcurses` on Windows cross-builds).
 
-Requires CMake ≥ 3.16, a C++17 compiler, and ncurses.
+Requires CMake ≥ 3.16, a C++17 compiler, ncurses, and python3 (for MicroPython header generation at configure time).
 
 ## Usage
 
 ```bash
-./build/midle                 # open the built-in sample script
-./build/midle script.py       # open a file in the editor
-./build/midle --run script.py # run a script and print output, then exit
+./build/midle                    # open the default sample (Python)
+./build/midle script.py          # open a Python file
+./build/midle script.js          # open a JavaScript file
+./build/midle --js               # start in JavaScript mode (default sample)
+./build/midle --py script.js     # force Python mode for a .js file
+./build/midle --run script.py    # run a script and print output, then exit
 ```
+
+Language is chosen from the file extension (`.py`, `.pyw`, `.js`, `.mjs`) unless `--py` or `--js` is given. Default is Python.
 
 `Ctrl+S` saves only when mIDLE was started with a file path.
 
@@ -60,3 +66,24 @@ Requires CMake ≥ 3.16, a C++17 compiler, and ncurses.
 | `Ctrl+S` | Save (when a file was opened) |
 | `Esc` | Exit |
 | `Tab` | Indent |
+
+### Language I/O
+
+| Language | Output | Input |
+|----------|--------|-------|
+| Python | `print(...)` | `input('prompt')` |
+| JavaScript | `print(...)` | `prompt('prompt')` |
+
+JavaScript uses host-provided `print` / `prompt` globals — not `console.log` or Node.js APIs.
+
+## Development
+
+Run tests after building with the `with-tests` preset:
+
+```bash
+cmake --preset with-tests
+cmake --build --preset with-tests -j
+ctest --preset default
+```
+
+See [AGENTS.md](AGENTS.md) for architecture, build gotchas, and how to add a new language backend.

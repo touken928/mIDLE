@@ -24,21 +24,21 @@ void RenderShellPanel(App &app, TuiActions &actions, int width, int height) {
 
     ImGui::TextUnformatted(app.shell_text.c_str());
 
-    if (app.mp_finished) {
+    if (app.run_finished) {
         ImGui::PushStyleColor(ImGuiCol_Text, theme.accent);
         ImGui::TextUnformatted("--- Press any key to exit ---");
         ImGui::PopStyleColor();
     } else {
-        ImGui::PushStyleColor(ImGuiCol_Text, app.mp_running ? theme.title : theme.muted);
-        ImGui::TextUnformatted(app.mp_running ? ">" : "$");
+        ImGui::PushStyleColor(ImGuiCol_Text, app.executing ? theme.title : theme.muted);
+        ImGui::TextUnformatted(app.executing ? ">" : "$");
         ImGui::PopStyleColor();
         ImGui::SameLine();
 
         ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue;
-        if (!app.mp_running) {
+        if (!app.executing) {
             flags |= ImGuiInputTextFlags_ReadOnly;
         }
-        if (app.focus_stdin || (app.mp_running && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))) {
+        if (app.focus_stdin || (app.executing && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))) {
             ImGui::SetKeyboardFocusHere();
             app.focus_stdin = false;
         }

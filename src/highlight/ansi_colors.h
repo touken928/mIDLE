@@ -1,6 +1,6 @@
 #pragma once
 
-#include "py_tokenizer.h"
+#include "tokens.h"
 
 namespace ImTui {
 using TColor = unsigned char;
@@ -9,7 +9,7 @@ using TColor = unsigned char;
 namespace midle {
 namespace highlight {
 
-ImTui::TColor ansi_color_for(PyTokenKind kind);
+ImTui::TColor ansi_color_for(TokenKind kind);
 
 } // namespace highlight
 } // namespace midle

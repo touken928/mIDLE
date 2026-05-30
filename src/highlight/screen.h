@@ -1,5 +1,7 @@
 #pragma once
 
+#include "runtime/runtime.h"
+
 namespace ImTui {
 struct TScreen;
 }
@@ -7,7 +9,7 @@ struct TScreen;
 namespace midle {
 namespace highlight {
 
-void ApplyPythonEditorHighlight(ImTui::TScreen *screen);
+void ApplyEditorHighlight(ImTui::TScreen *screen, runtime::LanguageId language);
 
 } // namespace highlight
 } // namespace midle

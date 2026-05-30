@@ -1,13 +1,14 @@
 #include "screen.h"
 
 #include "ansi_colors.h"
-#include "py_tokenizer.h"
+#include "runtime/runtime.h"
 
 #include "imtui/imtui.h"
 
 #include <algorithm>
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace midle {
 namespace highlight {
@@ -23,7 +24,9 @@ void set_cell_fg(ImTui::TCell &cell, ImTui::TColor fg) {
     cell |= (static_cast<ImTui::TCell>(fg) << 16);
 }
 
-void highlight_row(ImTui::TScreen *screen, int y) {
+using TokenizeFn = std::vector<TokenSpan> (*)(std::string_view);
+
+void highlight_row(ImTui::TScreen *screen, int y, TokenizeFn tokenize) {
     std::string line;
     line.reserve(static_cast<std::size_t>(screen->nx));
 
@@ -31,7 +34,7 @@ void highlight_row(ImTui::TScreen *screen, int y) {
         line.push_back(cell_char(screen->data[y * screen->nx + x]));
     }
 
-    const auto spans = tokenize_line(line);
+    const auto spans = tokenize(line);
     for (const auto &span : spans) {
         const ImTui::TColor color = ansi_color_for(span.kind);
         if (color == 0) {
@@ -47,14 +50,21 @@ void highlight_row(ImTui::TScreen *screen, int y) {
 
 } // namespace
 
-void ApplyPythonEditorHighlight(ImTui::TScreen *screen) {
+void ApplyEditorHighlight(ImTui::TScreen *screen, runtime::LanguageId language) {
     if (!screen || !screen->data || screen->nx <= 0 || screen->ny <= 2) {
         return;
     }
 
-    // Row 0: title bar; last row: status bar.
+    runtime::register_builtin_languages();
+    const runtime::LanguageModule *module = runtime::find_language(language);
+    if (!module || !module->tokenize_line) {
+        return;
+    }
+
+    const TokenizeFn tokenize = module->tokenize_line;
+
     for (int y = 1; y < screen->ny - 1; ++y) {
-        highlight_row(screen, y);
+        highlight_row(screen, y, tokenize);
     }
 }
 

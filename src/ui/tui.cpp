@@ -26,7 +26,7 @@ void RenderStatusBar(int x, int y, int width, int height, const App &app) {
 
     ImGui::PushStyleColor(ImGuiCol_Text, theme.muted);
     ImGui::Text("Ctrl+R %s  Ctrl+S Save  Esc Exit",
-        app.mp_running ? "Stop" : "Run");
+        app.executing ? "Stop" : "Run");
     ImGui::PopStyleColor();
     if (!app.status_text.empty()) {
         ImGui::SameLine();
@@ -53,7 +53,7 @@ void RenderEditorWindow(App &app, int x, int y, int width, int height) {
 }
 
 void RenderConsolePopup(App &app, TuiActions &actions, int screen_w, int screen_h) {
-    if (!app.mp_running && !app.mp_finished) {
+    if (!app.executing && !app.run_finished) {
         return;
     }
     const Theme &theme = GetTheme();
@@ -76,14 +76,14 @@ void RenderConsolePopup(App &app, TuiActions &actions, int screen_w, int screen_
     ImGui::PopStyleColor();
 
     if (!open) {
-        if (app.mp_running) {
+        if (app.executing) {
             actions.stop = true;
         } else {
             actions.dismiss_console = true;
         }
     }
 
-    if (app.mp_finished) {
+    if (app.run_finished) {
         if (ImGui::GetIO().InputQueueCharacters.Size > 0 ||
             ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Enter)) ||
             ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape)) ||
@@ -150,7 +150,7 @@ TuiActions RenderWorkspace(App &app) {
     TuiActions actions;
 
     if (NcursesCtrlPressed(kNcursesCtrlR)) {
-        if (app.mp_running) {
+        if (app.executing) {
             actions.stop = true;
         } else {
             actions.run = true;

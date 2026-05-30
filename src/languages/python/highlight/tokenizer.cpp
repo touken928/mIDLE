@@ -1,10 +1,12 @@
-#include "py_tokenizer.h"
+#include "tokenizer.h"
 
 #include <algorithm>
 #include <array>
 #include <string_view>
 
 namespace midle {
+namespace languages {
+namespace python {
 namespace highlight {
 namespace {
 
@@ -45,15 +47,15 @@ bool is_string_prefix_char(char c) {
 
 } // namespace
 
-std::vector<TokenSpan> tokenize_line(std::string_view line) {
-    std::vector<TokenSpan> spans;
+std::vector<midle::highlight::TokenSpan> tokenize_line(std::string_view line) {
+    std::vector<midle::highlight::TokenSpan> spans;
     const int n = static_cast<int>(line.size());
 
     for (int i = 0; i < n;) {
         const char c = line[static_cast<std::size_t>(i)];
 
         if (c == '#') {
-            spans.push_back({i, n, PyTokenKind::Comment});
+            spans.push_back({i, n, midle::highlight::TokenKind::Comment});
             break;
         }
 
@@ -63,7 +65,7 @@ std::vector<TokenSpan> tokenize_line(std::string_view line) {
                              line[static_cast<std::size_t>(j)] == '.')) {
                 ++j;
             }
-            spans.push_back({i, j, PyTokenKind::Decorator});
+            spans.push_back({i, j, midle::highlight::TokenKind::Decorator});
             i = j;
             continue;
         }
@@ -88,7 +90,7 @@ std::vector<TokenSpan> tokenize_line(std::string_view line) {
                 }
                 ++j;
             }
-            spans.push_back({start, j, PyTokenKind::String});
+            spans.push_back({start, j, midle::highlight::TokenKind::String});
             i = j;
             continue;
         }
@@ -109,7 +111,7 @@ std::vector<TokenSpan> tokenize_line(std::string_view line) {
                 }
                 break;
             }
-            spans.push_back({i, j, PyTokenKind::Number});
+            spans.push_back({i, j, midle::highlight::TokenKind::Number});
             i = j;
             continue;
         }
@@ -121,9 +123,9 @@ std::vector<TokenSpan> tokenize_line(std::string_view line) {
             }
             const std::string_view word(line.data() + i, static_cast<std::size_t>(j - i));
             if (is_keyword(word)) {
-                spans.push_back({i, j, PyTokenKind::Keyword});
+                spans.push_back({i, j, midle::highlight::TokenKind::Keyword});
             } else if (is_builtin(word)) {
-                spans.push_back({i, j, PyTokenKind::Builtin});
+                spans.push_back({i, j, midle::highlight::TokenKind::Builtin});
             }
             i = j;
             continue;
@@ -136,4 +138,6 @@ std::vector<TokenSpan> tokenize_line(std::string_view line) {
 }
 
 } // namespace highlight
+} // namespace python
+} // namespace languages
 } // namespace midle
