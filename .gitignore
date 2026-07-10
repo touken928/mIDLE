@@ -7,3 +7,4 @@ src/mpy/build-embed/
 *.so
 .DS_Store
 compile_commands.json
+.slim/deepwork/

@@ -150,6 +150,14 @@ bool done() {
     return active_engine() ? active_engine()->done() : true;
 }
 
+RunState state() {
+    return active_engine() ? active_engine()->state() : RunState::Idle;
+}
+
+RunResult result() {
+    return active_engine() ? active_engine()->result() : RunResult();
+}
+
 void input(const std::string &text) {
     if (active_engine()) {
         active_engine()->input(text);

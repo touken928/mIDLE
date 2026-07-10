@@ -1,4 +1,5 @@
 #include "port/mpconfigport_common.h"
+#include "../hal/port.h"
 
 #undef MICROPY_MPHALPORT_H
 #define MICROPY_MPHALPORT_H "../hal/port.h"
@@ -25,5 +26,6 @@
 #define MICROPY_PY_IO                     (1)
 
 #define mp_hal_readline                   port_readline
+#define MICROPY_VM_HOOK_LOOP              port_vm_hook_loop();
 
 #define MICROPY_PY_SYS_PLATFORM           "mIDLE"

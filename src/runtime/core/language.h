@@ -50,6 +50,8 @@ void deinit();
 void run_async(const std::string &source);
 std::string take_output();
 bool done();
+RunState state();
+RunResult result();
 void input(const std::string &text);
 void close_stdin();
 void stop();

@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <string>
+#include "async_runner.h"
 
 namespace midle {
 namespace runtime {
@@ -16,6 +17,8 @@ public:
     virtual void run_async(const std::string &source) = 0;
     virtual std::string take_output() = 0;
     virtual bool done() = 0;
+    virtual RunState state() const { return RunState::Running; }
+    virtual RunResult result() const { return RunResult(state()); }
 
     virtual void input(const std::string &text) = 0;
     virtual void close_stdin() = 0;

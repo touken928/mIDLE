@@ -27,9 +27,9 @@ public:
             script_io_stdin_reset();
             script_io_clear();
         });
-        async_.set_task([this](const std::string &source) {
+        async_.set_task([this](const std::string &source, const runtime::StopToken &) {
             std::lock_guard<std::mutex> lock(mutex_);
-            run_source_locked(source);
+            return run_source(source, script_io_stdin_generation());
         });
         async_.set_finalize([] {
             script_io_stdin_close();
@@ -37,10 +37,9 @@ public:
     }
 
     void deinit() override {
-        close_stdin();
+        stop();
         async_.join_if_running();
-        std::lock_guard<std::mutex> lock(mutex_);
-        destroy_context_locked();
+        script_io_stdin_reset();
     }
 
     void run_async(const std::string &source) override {
@@ -69,20 +68,24 @@ public:
 
     void stop() override {
         stop_requested_.store(true, std::memory_order_release);
-        script_io_stdin_feed("\x03", 1);
+        async_.request_stop();
+        script_io_stdin_cancel();
     }
 
     std::string exec(const std::string &source) override {
-        std::lock_guard<std::mutex> lock(mutex_);
-        script_io_clear();
-        run_source_locked(source);
-        script_io_stdin_close();
+        if (!async_.try_run_async(source)) {
+            return {};
+        }
+        async_.join_if_running();
         return take_output();
     }
 
     void clear_output() override {
         script_io_clear();
     }
+
+    runtime::RunState state() const override { return async_.state(); }
+    runtime::RunResult result() const override { return async_.result(); }
 
 private:
     static int interrupt_handler(JSRuntime *rt, void *opaque) {
@@ -91,7 +94,7 @@ private:
         return self->stop_requested_.load(std::memory_order_acquire) ? 1 : 0;
     }
 
-    static void write_exception(JSContext *ctx) {
+    static std::string exception_text(JSContext *ctx) {
         JSValue exc = JS_GetException(ctx);
         JSValue stack = JS_GetPropertyStr(ctx, exc, "stack");
         JSValue msg = JS_GetPropertyStr(ctx, exc, "message");
@@ -105,14 +108,12 @@ private:
         if (!text) {
             text = JS_ToCString(ctx, exc);
         }
-        if (text) {
-            script_io_write(text, std::strlen(text));
-            script_io_write("\n", 1);
-            JS_FreeCString(ctx, text);
-        }
+        std::string result = text ? text : "JavaScript exception";
+        if (text) JS_FreeCString(ctx, text);
         JS_FreeValue(ctx, msg);
         JS_FreeValue(ctx, stack);
         JS_FreeValue(ctx, exc);
+        return result;
     }
 
     static JSValue js_print(JSContext *ctx, JSValueConst, int argc, JSValueConst *argv) {
@@ -131,6 +132,7 @@ private:
     }
 
     static JSValue js_prompt(JSContext *ctx, JSValueConst, int argc, JSValueConst *argv) {
+        auto *self = static_cast<JavaScriptEngine *>(JS_GetContextOpaque(ctx));
         if (argc >= 1) {
             const char *msg = JS_ToCString(ctx, argv[0]);
             if (msg) {
@@ -140,10 +142,16 @@ private:
         }
         std::string line;
         for (;;) {
-            int c = script_io_read_char();
-            if (c < 0) {
+            unsigned char byte = 0;
+            int c = script_io_read_char_generation(self ? self->generation_ : 0, &byte);
+            if (c == SCRIPT_IO_READ_CANCELLED) {
+                if (self) self->stop_requested_.store(true, std::memory_order_release);
+                return JS_ThrowInternalError(ctx, "interrupted");
+            }
+            if (c != SCRIPT_IO_READ_BYTE) {
                 break;
             }
+            c = byte;
             if (c == '\r') {
                 continue;
             }
@@ -164,65 +172,59 @@ private:
         JS_FreeValue(ctx, global);
     }
 
-    void create_context_locked() {
-        if (rt_) {
-            return;
-        }
-        rt_ = JS_NewRuntime();
-        if (!rt_) {
-            return;
-        }
-        JS_SetMemoryLimit(rt_, memory_limit_);
-        JS_SetInterruptHandler(rt_, interrupt_handler, this);
-        ctx_ = JS_NewContext(rt_);
-        if (!ctx_) {
-            JS_FreeRuntime(rt_);
-            rt_ = nullptr;
-            return;
-        }
-        bind_globals(ctx_);
+    JSRuntime *create_runtime() {
+        JSRuntime *rt = JS_NewRuntime();
+        if (!rt) return nullptr;
+        JS_SetMemoryLimit(rt, memory_limit_);
+        JS_SetInterruptHandler(rt, interrupt_handler, this);
+        return rt;
     }
 
-    void destroy_context_locked() {
-        if (ctx_) {
-            JS_FreeContext(ctx_);
-            ctx_ = nullptr;
+    runtime::RunResult run_source(const std::string &source, uint64_t generation) {
+        generation_ = generation;
+        JSRuntime *rt = create_runtime();
+        JSContext *ctx = rt ? JS_NewContext(rt) : nullptr;
+        if (!ctx) {
+            if (rt) JS_FreeRuntime(rt);
+            return runtime::RunResult(runtime::RunState::Failed, "unable to create JavaScript context");
         }
-        if (rt_) {
-            JS_FreeRuntime(rt_);
-            rt_ = nullptr;
-        }
-    }
+        JS_SetContextOpaque(ctx, this);
+        bind_globals(ctx);
+        runtime::RunResult result(runtime::RunState::Succeeded);
 
-    void run_source_locked(const std::string &source) {
-        stop_requested_.store(false, std::memory_order_release);
-        create_context_locked();
-        if (!ctx_) {
-            return;
-        }
-
-        JSValue ret = JS_Eval(ctx_, source.c_str(), source.size(), "<stdin>",
+        JSValue ret = JS_Eval(ctx, source.c_str(), source.size(), "<stdin>",
             JS_EVAL_TYPE_GLOBAL);
         if (JS_IsException(ret)) {
-            write_exception(ctx_);
+            std::string diagnostic = exception_text(ctx);
+            script_io_write(diagnostic.c_str(), diagnostic.size());
+            script_io_write("\n", 1);
+            if (stop_requested_.load(std::memory_order_acquire)) result = runtime::RunResult(runtime::RunState::Cancelled, diagnostic);
+            else result = runtime::RunResult(runtime::RunState::Failed, diagnostic);
         }
-        JS_FreeValue(ctx_, ret);
+        JS_FreeValue(ctx, ret);
 
-        while (JS_IsJobPending(rt_)) {
+        while (result.state() == runtime::RunState::Succeeded && JS_IsJobPending(rt)) {
             JSContext *job_ctx = nullptr;
-            int rc = JS_ExecutePendingJob(rt_, &job_ctx);
+            int rc = JS_ExecutePendingJob(rt, &job_ctx);
             if (rc < 0 && job_ctx) {
-                write_exception(job_ctx);
+                std::string diagnostic = exception_text(job_ctx);
+                script_io_write(diagnostic.c_str(), diagnostic.size());
+                script_io_write("\n", 1);
+                result = runtime::RunResult(stop_requested_.load(std::memory_order_acquire) ? runtime::RunState::Cancelled : runtime::RunState::Failed, diagnostic);
                 break;
             }
         }
+        JS_FreeContext(ctx);
+        JS_FreeRuntime(rt);
+        if (stop_requested_.load(std::memory_order_acquire) && result.state() == runtime::RunState::Succeeded)
+            result = runtime::RunResult(runtime::RunState::Cancelled, "stop requested");
+        return result;
     }
 
-    JSRuntime *rt_ = nullptr;
-    JSContext *ctx_ = nullptr;
     size_t memory_limit_ = 8 * 1024 * 1024;
     std::mutex mutex_;
     std::atomic_bool stop_requested_{false};
+    uint64_t generation_ = 0;
     runtime::AsyncRunner async_;
 };
 

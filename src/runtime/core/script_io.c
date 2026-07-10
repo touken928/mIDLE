@@ -16,6 +16,8 @@ static char        stdin_buf[STDIN_CAP];
 static size_t      stdin_rd;
 static size_t      stdin_wr;
 static int         stdin_closed;
+static int         stdin_cancelled;
+static uint64_t    stdin_generation = 1;
 static pthread_cond_t stdin_cv = PTHREAD_COND_INITIALIZER;
 
 #define LOCK()   pthread_mutex_lock(&g_mtx)
@@ -59,13 +61,15 @@ void script_io_stdin_reset(void) {
     stdin_rd = 0;
     stdin_wr = 0;
     stdin_closed = 0;
-    pthread_cond_signal(&stdin_cv);
+    stdin_cancelled = 0;
+    stdin_generation++;
+    pthread_cond_broadcast(&stdin_cv);
     UNLOCK();
 }
 
 void script_io_stdin_feed(const char *str, size_t len) {
     LOCK();
-    for (size_t i = 0; i < len && !stdin_closed; i++) {
+    for (size_t i = 0; i < len && !stdin_closed && !stdin_cancelled; i++) {
         size_t next = (stdin_wr + 1) % STDIN_CAP;
         if (next == stdin_rd) {
             break;
@@ -73,28 +77,46 @@ void script_io_stdin_feed(const char *str, size_t len) {
         stdin_buf[stdin_wr] = str[i];
         stdin_wr = next;
     }
-    pthread_cond_signal(&stdin_cv);
+    pthread_cond_broadcast(&stdin_cv);
     UNLOCK();
 }
 
 void script_io_stdin_close(void) {
     LOCK();
     stdin_closed = 1;
-    pthread_cond_signal(&stdin_cv);
+    pthread_cond_broadcast(&stdin_cv);
     UNLOCK();
 }
 
-int script_io_read_char(void) {
+uint64_t script_io_stdin_generation(void) {
+    LOCK(); uint64_t generation = stdin_generation; UNLOCK(); return generation;
+}
+
+void script_io_stdin_cancel(void) {
+    LOCK(); stdin_cancelled = 1; pthread_cond_broadcast(&stdin_cv); UNLOCK();
+}
+
+int script_io_read_char_generation(uint64_t generation, unsigned char *out) {
     LOCK();
-    while (stdin_rd == stdin_wr && !stdin_closed) {
+    while (generation == stdin_generation && stdin_rd == stdin_wr && !stdin_closed && !stdin_cancelled) {
         pthread_cond_wait(&stdin_cv, &g_mtx);
     }
-    if (stdin_closed && stdin_rd == stdin_wr) {
+    if (generation != stdin_generation || stdin_cancelled) {
         UNLOCK();
-        return -1;
+        return SCRIPT_IO_READ_CANCELLED;
+    }
+    if (stdin_closed && stdin_rd == stdin_wr) {
+        UNLOCK(); return SCRIPT_IO_READ_EOF;
     }
     char c = stdin_buf[stdin_rd];
     stdin_rd = (stdin_rd + 1) % STDIN_CAP;
+    if (out) *out = (unsigned char)c;
     UNLOCK();
-    return (unsigned char)c;
+    return SCRIPT_IO_READ_BYTE;
+}
+
+int script_io_read_char(void) {
+    unsigned char c = 0;
+    const int result = script_io_read_char_generation(script_io_stdin_generation(), &c);
+    return result == SCRIPT_IO_READ_BYTE ? c : -1;
 }

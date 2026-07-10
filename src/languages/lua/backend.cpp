@@ -28,9 +28,9 @@ public:
             script_io_stdin_reset();
             script_io_clear();
         });
-        async_.set_task([this](const std::string &source) {
+        async_.set_task([this](const std::string &source, const runtime::StopToken &) {
             std::lock_guard<std::mutex> lock(mutex_);
-            run_source_locked(source);
+            return run_source(source, script_io_stdin_generation());
         });
         async_.set_finalize([] {
             script_io_stdin_close();
@@ -38,10 +38,9 @@ public:
     }
 
     void deinit() override {
-        close_stdin();
+        stop();
         async_.join_if_running();
-        std::lock_guard<std::mutex> lock(mutex_);
-        destroy_state_locked();
+        script_io_stdin_reset();
     }
 
     void run_async(const std::string &source) override {
@@ -70,20 +69,24 @@ public:
 
     void stop() override {
         stop_requested_.store(true, std::memory_order_release);
-        script_io_stdin_feed("\x03", 1);
+        async_.request_stop();
+        script_io_stdin_cancel();
     }
 
     std::string exec(const std::string &source) override {
-        std::lock_guard<std::mutex> lock(mutex_);
-        script_io_clear();
-        run_source_locked(source);
-        script_io_stdin_close();
+        if (!async_.try_run_async(source)) {
+            return {};
+        }
+        async_.join_if_running();
         return take_output();
     }
 
     void clear_output() override {
         script_io_clear();
     }
+
+    runtime::RunState state() const override { return async_.state(); }
+    runtime::RunResult result() const override { return async_.result(); }
 
     bool stop_requested() const {
         return stop_requested_.load(std::memory_order_acquire);
@@ -121,22 +124,36 @@ private:
         const char *msg = luaL_optstring(L, 1, "");
         script_io_write(msg, std::strlen(msg));
 
-        std::string line;
-        for (;;) {
-            const int c = script_io_read_char();
-            if (c < 0) {
-                break;
+        bool cancelled = false;
+        {
+            std::string line;
+            for (;;) {
+                unsigned char byte = 0;
+                const int read = script_io_read_char_generation(self_generation(L), &byte);
+                if (read == SCRIPT_IO_READ_CANCELLED) {
+                    cancelled = true;
+                    break;
+                }
+                if (read != SCRIPT_IO_READ_BYTE) {
+                    break;
+                }
+                const int c = byte;
+                if (c == '\r') {
+                    continue;
+                }
+                if (c == '\n') {
+                    break;
+                }
+                line += static_cast<char>(c);
             }
-            if (c == '\r') {
-                continue;
+            if (!cancelled) {
+                lua_pushlstring(L, line.data(), line.size());
+                return 1;
             }
-            if (c == '\n') {
-                break;
-            }
-            line += static_cast<char>(c);
         }
-        lua_pushstring(L, line.c_str());
-        return 1;
+        auto *self = engine(L);
+        if (self) self->input_cancelled_.store(true, std::memory_order_release);
+        return luaL_error(L, "interrupted");
     }
 
     void write_error_locked() {
@@ -160,48 +177,58 @@ private:
         lua_setfield(L_, LUA_REGISTRYINDEX, kEngineKey);
     }
 
-    void create_state_locked() {
-        if (L_) {
-            return;
-        }
-        L_ = luaL_newstate();
-        if (!L_) {
-            return;
-        }
-        luaL_openlibs(L_);
+    static LuaEngine *engine(lua_State *L) {
+        lua_getfield(L, LUA_REGISTRYINDEX, kEngineKey);
+        auto *self = static_cast<LuaEngine *>(lua_touserdata(L, -1));
+        lua_pop(L, 1);
+        return self;
+    }
+
+    static uint64_t self_generation(lua_State *L) {
+        auto *self = engine(L);
+        return self ? self->generation_ : 0;
+    }
+
+    runtime::RunResult run_source(const std::string &source, uint64_t generation) {
+        generation_ = generation;
+        input_cancelled_.store(false, std::memory_order_release);
+        lua_State *L = luaL_newstate();
+        if (!L) return runtime::RunResult(runtime::RunState::Failed, "unable to create Lua state");
+        L_ = L;
+        luaL_openlibs(L);
         bind_host_globals_locked();
         attach_engine_locked();
-        lua_sethook(L_, hook, LUA_MASKCOUNT, 1000);
-    }
+        lua_sethook(L, hook, LUA_MASKCOUNT, 1000);
+        runtime::RunResult result(runtime::RunState::Succeeded);
 
-    void destroy_state_locked() {
-        if (L_) {
-            lua_close(L_);
-            L_ = nullptr;
-        }
-    }
-
-    void run_source_locked(const std::string &source) {
-        stop_requested_.store(false, std::memory_order_release);
-        create_state_locked();
-        if (!L_) {
-            return;
-        }
-
-        const int err = luaL_loadbuffer(L_, source.data(), source.size(), "stdin");
+        const int err = luaL_loadbuffer(L, source.data(), source.size(), "stdin");
         if (err != LUA_OK) {
-            write_error_locked();
-            return;
+            const char *msg = lua_tostring(L, -1);
+            if (msg) {
+                script_io_write(msg, std::strlen(msg));
+                script_io_write("\n", 1);
+            }
+            result = runtime::RunResult(runtime::RunState::Failed, msg ? msg : "Lua load error");
+        } else if (lua_pcall(L, 0, 0, 0) != LUA_OK) {
+            const char *msg = lua_tostring(L, -1);
+            if (msg) {
+                script_io_write(msg, std::strlen(msg));
+                script_io_write("\n", 1);
+            }
+            result = runtime::RunResult(stop_requested_.load(std::memory_order_acquire) ? runtime::RunState::Cancelled : runtime::RunState::Failed, msg ? msg : "Lua runtime error");
         }
-
-        if (lua_pcall(L_, 0, 0, 0) != LUA_OK) {
-            write_error_locked();
-        }
+        if (input_cancelled_.load(std::memory_order_acquire) || stop_requested_.load(std::memory_order_acquire))
+            result = runtime::RunResult(runtime::RunState::Cancelled, "stop requested");
+        lua_close(L);
+        L_ = nullptr;
+        return result;
     }
 
     lua_State *L_ = nullptr;
     std::mutex mutex_;
     std::atomic_bool stop_requested_{false};
+    std::atomic_bool input_cancelled_{false};
+    uint64_t generation_ = 0;
     runtime::AsyncRunner async_;
 };
 

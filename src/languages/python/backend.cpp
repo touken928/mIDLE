@@ -6,6 +6,7 @@
 #include "runtime/core/script_io.h"
 
 #include <cstdlib>
+#include <memory>
 #include <string>
 
 extern "C" {
@@ -22,15 +23,30 @@ namespace {
 class PythonEngine final : public runtime::ScriptEngine {
 public:
     void init(void *stack_top, size_t heap_bytes) override {
-        gc_heap_ = new char[heap_bytes];
-        mp_embed_init(gc_heap_, heap_bytes, stack_top);
+        (void)stack_top;
+        heap_bytes_ = heap_bytes;
 
         async_.set_prepare([] {
             script_io_stdin_reset();
             script_io_clear();
+            port_clear_cancel_request();
         });
-        async_.set_task([](const std::string &source) {
-            mp_embed_exec_str(source.c_str());
+        async_.set_task([this](const std::string &source, const runtime::StopToken &token) {
+            std::unique_ptr<char[]> heap(new char[heap_bytes_]);
+            char stack_top = 0;
+            mp_embed_init(heap.get(), heap_bytes_, &stack_top);
+            const int outcome = port_exec_str(source.c_str());
+            mp_embed_deinit();
+            if (outcome == PORT_EXEC_CANCELLED || token.stop_requested()) {
+                return runtime::RunResult(runtime::RunState::Cancelled, "KeyboardInterrupt");
+            }
+            if (outcome == PORT_EXEC_KEYBOARD_INTERRUPT) {
+                return runtime::RunResult(runtime::RunState::Failed, "KeyboardInterrupt");
+            }
+            if (outcome == PORT_EXEC_FAILED) {
+                return runtime::RunResult(runtime::RunState::Failed, "Python exception");
+            }
+            return runtime::RunResult(runtime::RunState::Succeeded);
         });
         async_.set_finalize([] {
             script_io_stdin_close();
@@ -38,13 +54,9 @@ public:
     }
 
     void deinit() override {
-        close_stdin();
+        stop();
         async_.join_if_running();
-        if (gc_heap_) {
-            mp_embed_deinit();
-            delete[] gc_heap_;
-            gc_heap_ = nullptr;
-        }
+        script_io_stdin_reset();
     }
 
     void run_async(const std::string &source) override {
@@ -62,6 +74,9 @@ public:
         return async_.done();
     }
 
+    runtime::RunState state() const override { return async_.state(); }
+    runtime::RunResult result() const override { return async_.result(); }
+
     void input(const std::string &text) override {
         script_io_stdin_feed(text.data(), text.size());
         script_io_stdin_feed("\n", 1);
@@ -72,14 +87,16 @@ public:
     }
 
     void stop() override {
-        MP_STATE_VM(mp_kbd_exception).traceback_data = NULL;
-        MP_STATE_THREAD(mp_pending_exception) = MP_OBJ_FROM_PTR(&MP_STATE_VM(mp_kbd_exception));
-        script_io_stdin_feed("\x03", 1);
+        async_.request_stop();
+        port_request_cancel();
+        script_io_stdin_cancel();
     }
 
     std::string exec(const std::string &source) override {
-        script_io_clear();
-        mp_embed_exec_str(source.c_str());
+        if (!async_.try_run_async(source)) {
+            return {};
+        }
+        async_.join_if_running();
         return take_output();
     }
 
@@ -88,7 +105,7 @@ public:
     }
 
 private:
-    char *gc_heap_ = nullptr;
+    size_t heap_bytes_ = 0;
     runtime::AsyncRunner async_;
 };
 
